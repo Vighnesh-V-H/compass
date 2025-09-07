@@ -1,0 +1,7 @@
+{
+  "name": "@zeintel/tsconfig",
+  "private": true,
+  "exports": {
+    "./base": "./base.json"
+  }
+}

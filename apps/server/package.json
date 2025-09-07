@@ -1,0 +1,16 @@
+{
+  "name": "@zeintel/server",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "private": true,
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
+    "postgres": "^3.4.7"
+  }
+}

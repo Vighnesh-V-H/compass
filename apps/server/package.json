@@ -3,14 +3,22 @@
   "devDependencies": {
     "@types/bun": "latest"
   },
+  "scripts": {
+    "dev": "bun --watch src/main.ts"
+  },
+  "exports": {
+    "./auth": "./src/lib/auth.ts"
+  },
   "peerDependencies": {
     "typescript": "^5"
   },
   "private": true,
   "dependencies": {
+    "@hono/node-server": "^1.19.1",
     "dotenv": "^17.2.2",
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
+    "hono": "^4.9.6",
     "postgres": "^3.4.7"
   }
 }

@@ -9,4 +9,12 @@ export const auth = betterAuth({
     provider: "pg",
     schema: schema,
   }),
+  trustedOrigins: ["http://localhost:3001"],
+  socialProviders: {
+    google: {
+      prompt: "select_account consent",
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
 });

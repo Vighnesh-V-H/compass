@@ -116,11 +116,11 @@ export default function SignInForm() {
                 await signIn.social(
                   {
                     provider: "google",
-                    callbackURL: "/dashboard",
+                    callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
                   },
                   {
                     onRequest: (ctx) => {
-                      console.log("hi");
+                      console.log(process.env.SERVER_URL);
                       setLoading(true);
                     },
                     onResponse: (ctx) => {

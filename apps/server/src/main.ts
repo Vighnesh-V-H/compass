@@ -9,7 +9,7 @@ const app = new Hono();
 app.use(
   "/api/*",
   cors({
-    origin: "http://localhost:3001",
+    origin: "http://localhost:3000",
     allowMethods: ["GET", "POST", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
@@ -20,7 +20,7 @@ app.basePath("/api").route("/", authRouter);
 
 Bun.serve({
   fetch: app.fetch,
-  port: Number(process.env.PORT) || 3000,
+  port: Number(process.env.PORT) || 3001,
 });
 
-console.log(`Server running on http://localhost:${process.env.PORT || 3000}`);
+console.log(`Server running on http://localhost:${process.env.PORT || 3001}`);

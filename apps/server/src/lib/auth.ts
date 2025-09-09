@@ -9,7 +9,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema: schema,
   }),
-  trustedOrigins: ["http://localhost:3001"],
+  trustedOrigins: ["http://localhost:3000"],
   socialProviders: {
     google: {
       prompt: "select_account consent",

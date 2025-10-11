@@ -1,5 +1,5 @@
 {
-  "name": "zeintel",
+  "name": "velosity",
   "devDependencies": {
     "prettier": "^3.6.2",
     "turbo": "^2.5.6",
@@ -12,7 +12,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --filter=@zeintel/server --filter=zeintel --parallel",
+    "dev": "turbo run dev --filter=@velosity/server --filter=velosity --parallel",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"

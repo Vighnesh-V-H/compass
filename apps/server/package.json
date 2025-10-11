@@ -1,5 +1,5 @@
 {
-  "name": "@zeintel/server",
+  "name": "@velosity/server",
   "devDependencies": {
     "@types/bun": "latest"
   },

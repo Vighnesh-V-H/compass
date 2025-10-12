@@ -2,7 +2,6 @@ import { Hono } from "hono";
 import authRouter from "@/routes/auth";
 import { cors } from "hono/cors";
 import Bun from "bun";
-import { serve } from "@hono/node-server";
 
 const app = new Hono();
 
@@ -23,4 +22,4 @@ Bun.serve({
   port: Number(process.env.PORT) || 3001,
 });
 
-console.log(`Server running on http://localhost:${process.env.PORT || 3001}`);
+console.log(`Server running on http://localhost:${process.env.PORT}`);

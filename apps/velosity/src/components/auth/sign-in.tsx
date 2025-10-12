@@ -120,7 +120,7 @@ export default function SignInForm() {
                   },
                   {
                     onRequest: (ctx) => {
-                      console.log(process.env.SERVER_URL);
+                      console.log(process.env.NEXT_PUBLIC_SERVER_URL);
                       setLoading(true);
                     },
                     onResponse: (ctx) => {

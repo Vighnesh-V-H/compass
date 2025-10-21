@@ -3,7 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Zeintel",
+  title: "Compass",
   description: "Survey in one click",
 };
 

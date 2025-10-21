@@ -1,5 +1,5 @@
 {
-  "extends": "@velosity/tsconfig/base",
+  "extends": "@compass/tsconfig/base",
   "compilerOptions": {
     "lib": ["ESNext"],
     "target": "ESNext",

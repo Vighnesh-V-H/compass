@@ -14,7 +14,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { Loader2, Key } from "lucide-react";
-import { authClient, signIn } from "@/lib/auth-client";
+import {
+  authClient,
+  signIn,
+  $ERROR_CODES as ERROR_CODES,
+} from "@/lib/auth-client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -22,10 +26,12 @@ export default function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [rememberMe, setRememberMe] = useState(false);
 
   return (
-    <Card className='max-w-md'>
+    <Card className='max-w-md w-[300px]'>
       <CardHeader>
         <CardTitle className='text-lg md:text-xl'>Sign In</CardTitle>
         <CardDescription className='text-xs md:text-sm'>
@@ -33,8 +39,41 @@ export default function SignInForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className='grid gap-4'>
-          {/* <div className='grid gap-2'>
+        <form
+          className='grid gap-4'
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setError("");
+            setSuccess("");
+            try {
+              await signIn.email(
+                {
+                  email,
+                  password,
+                },
+                {
+                  onRequest: () => {
+                    setLoading(true);
+                  },
+                  onResponse: async (ctx) => {
+                    setLoading(false);
+                    try {
+                      const res = await ctx?.response.clone().json();
+                      if (ERROR_CODES[res.code as keyof typeof ERROR_CODES]) {
+                        setError(res.message);
+                      } else setSuccess(res.message);
+                    } catch (err) {
+                      setError("Unexpected response from server.");
+                    }
+                  },
+                }
+              );
+            } catch (err: any) {
+              setLoading(false);
+              setError(err?.message ?? "Something went wrong.");
+            }
+          }}>
+          <div className='grid gap-2'>
             <Label htmlFor='email'>Email</Label>
             <Input
               id='email'
@@ -46,9 +85,9 @@ export default function SignInForm() {
               }}
               value={email}
             />
-          </div> */}
+          </div>
 
-          {/* <div className='grid gap-2'>
+          <div className='grid gap-2'>
             <div className='flex items-center'>
               <Label htmlFor='password'>Password</Label>
               <Link href='#' className='ml-auto inline-block text-sm underline'>
@@ -60,7 +99,7 @@ export default function SignInForm() {
               id='password'
               type='password'
               placeholder='password'
-              autoComplete='password'
+              autoComplete='current-password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -69,39 +108,30 @@ export default function SignInForm() {
           <div className='flex items-center gap-2'>
             <Checkbox
               id='remember'
-              onClick={() => {
-                setRememberMe(!rememberMe);
-              }}
+              checked={rememberMe}
+              onCheckedChange={(checked) => setRememberMe(Boolean(checked))}
             />
             <Label htmlFor='remember'>Remember me</Label>
           </div>
 
-          <Button
-            type='submit'
-            className='w-full'
-            disabled={loading}
-            onClick={async () => {
-              await signIn.email(
-                {
-                  email,
-                  password,
-                },
-                {
-                  onRequest: (ctx) => {
-                    setLoading(true);
-                  },
-                  onResponse: (ctx) => {
-                    setLoading(false);
-                  },
-                }
-              );
-            }}>
+          {success && (
+            <p className='text-md text-emerald-500 ' aria-live='polite'>
+              {success}
+            </p>
+          )}
+          {error && (
+            <p className='text-md text-red-500 ' aria-live='polite'>
+              {error}
+            </p>
+          )}
+
+          <Button type='submit' className='w-full' disabled={loading}>
             {loading ? (
               <Loader2 size={16} className='animate-spin' />
             ) : (
               <p> Login </p>
             )}
-          </Button> */}
+          </Button>
 
           <div
             className={cn(
@@ -111,12 +141,13 @@ export default function SignInForm() {
             <Button
               variant='outline'
               className={cn("w-full gap-2")}
+              type='button'
               disabled={loading}
               onClick={async () => {
                 await signIn.social(
                   {
                     provider: "google",
-                    callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`,
+                    callbackURL: `/dashboard`,
                   },
                   {
                     onRequest: (ctx) => {
@@ -151,7 +182,7 @@ export default function SignInForm() {
               Sign in with Google
             </Button>
           </div>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

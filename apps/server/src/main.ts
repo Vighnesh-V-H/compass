@@ -19,7 +19,7 @@ app.basePath("/api").route("/", authRouter);
 
 Bun.serve({
   fetch: app.fetch,
-  port: Number(process.env.PORT) || 3001,
+  port: Number(process.env.PORT) || 8081,
 });
 
 console.log(`Server running on http://localhost:${process.env.PORT}`);

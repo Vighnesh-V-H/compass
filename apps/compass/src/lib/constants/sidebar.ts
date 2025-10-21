@@ -6,6 +6,8 @@ import {
   TextSelect,
   CheckSquare2,
   Settings,
+  DraftingCompassIcon,
+  CropIcon,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -30,20 +32,14 @@ export const sidebarConfig: SidebarSection[] = [
         icon: LayoutDashboard,
       },
       {
-        title: "Surveys",
+        title: "Canvas",
         url: "/surveys",
-        icon: TextSelect,
+        icon: DraftingCompassIcon,
       },
       {
-        title: "Tasks",
-        url: "/tasks",
-        icon: CheckSquare2,
-        badge: "24",
-      },
-      {
-        title: "Reports",
-        url: "/reports",
-        icon: FileText,
+        title: "Designs",
+        url: "/designs",
+        icon: CropIcon,
       },
       {
         title: "Settings",

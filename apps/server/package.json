@@ -1,5 +1,5 @@
 {
-  "name": "@velosity/server",
+  "name": "@compass/server",
   "devDependencies": {
     "@types/bun": "latest"
   },

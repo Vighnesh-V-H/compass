@@ -13,6 +13,11 @@ export const auth = betterAuth({
   }),
 
   trustedOrigins: ["http://localhost:3000"],
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+    revokeSessionsOnPasswordReset: true,
+  },
   socialProviders: {
     google: {
       prompt: "select_account consent",
@@ -20,6 +25,7 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     },
   },
+
   advanced: {
     ipAddress: { disableIpTracking: false },
   },

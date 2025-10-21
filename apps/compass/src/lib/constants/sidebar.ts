@@ -8,6 +8,7 @@ import {
   Settings,
   DraftingCompassIcon,
   CropIcon,
+  ProjectorIcon,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -27,9 +28,9 @@ export const sidebarConfig: SidebarSection[] = [
     title: "MENU",
     items: [
       {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: LayoutDashboard,
+        title: "Projects",
+        url: "/projects",
+        icon: ProjectorIcon,
       },
       {
         title: "Canvas",

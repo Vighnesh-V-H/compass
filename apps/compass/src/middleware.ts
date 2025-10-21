@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/auth")) {
     if (sessionCookie) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/projects", request.url));
     } else {
       return NextResponse.next();
     }

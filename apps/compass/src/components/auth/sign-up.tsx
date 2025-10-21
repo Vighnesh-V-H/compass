@@ -34,7 +34,7 @@ export default function SignUpForm() {
       email,
       password,
       name: `${firstName} ${lastName}`,
-      callbackURL: "/dashboard",
+      callbackURL: "/projects",
       fetchOptions: {
         onResponse: () => {
           setLoading(false);

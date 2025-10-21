@@ -147,7 +147,7 @@ export default function SignInForm() {
                 await signIn.social(
                   {
                     provider: "google",
-                    callbackURL: `/dashboard`,
+                    callbackURL: `/projects`,
                   },
                   {
                     onRequest: (ctx) => {

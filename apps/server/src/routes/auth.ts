@@ -15,7 +15,7 @@ router.post("/auth/sign-in/email", async (ctx) => {
       email,
       password,
       rememberMe: true,
-      callbackURL: "http://localhost:3000/dashboard",
+      callbackURL: "http://localhost:3000/projects",
     },
     headers: ctx.header,
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { ChevronLeft, Target } from "lucide-react";
+import { ChevronLeft, DraftingCompassIcon, Target } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,10 +39,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <div className='flex items-center justify-between'>
           <div className='flex items-center  gap-3'>
             <div className='flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-sky-600 shadow-lg dark:shadow-indigo-500/20'>
-              <Target className='h-5 w-5 text-white' />
+              <DraftingCompassIcon size={20} />
             </div>
             <span className='font-bold text-xl group-data-[collapsible=icon]:hidden bg-gradient-to-r from-indigo-600 to-sky-500 dark:from-indigo-400 dark:to-violet-300 bg-clip-text text-transparent'>
-              Zeintel
+              Compass
             </span>
           </div>
           <TooltipGlobal content='Toggle sidebar'>

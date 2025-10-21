@@ -1,10 +1,10 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { createDb } from "@/db/index";
+
 import * as schema from "@/db/schema";
 import { SESSION_EXPIRY_TIME, SESSION_UPDATE_AGE } from "./constants";
-const { db } = createDb(process.env.DATABASE_URL!);
 import { nextCookies } from "better-auth/next-js";
+import { db } from "@/db";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {

@@ -1,13 +1,12 @@
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres, { type Sql } from "postgres";
-import * as schema from "./schema";
+import createDb from "./config";
 
-const createDrizzle = (conn: Sql) => drizzle(conn, { schema });
+const { db } = createDb({
+  url: process.env.DATABASE_URL!,
+  maxConnections: process.env.DB_MAX_CONN
+    ? parseInt(process.env.DB_MAX_CONN)
+    : 20,
+  idleTimeout: 60000,
+  ssl: true,
+});
 
-export const createDb = (url: string) => {
-  const conn = postgres(url);
-  const db = createDrizzle(conn);
-  return { db, conn };
-};
-
-export type DB = ReturnType<typeof createDrizzle>;
+export { db };

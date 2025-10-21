@@ -1,4 +1,12 @@
-import { boolean, pgEnum, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
+import { nanoid } from "nanoid";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -60,9 +68,27 @@ export const verification = pgTable("verification", {
   ),
 });
 
+export const visibilityEnum = pgEnum("visibility", [
+  "public",
+  "private",
+  "unlisted",
+]);
+
+export const project = pgTable("project", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  name: varchar("name").notNull(),
+  visibility: visibilityEnum("visibility").notNull().default("private"),
+});
+
 export const schema = {
   user,
   session,
   account,
   verification,
+  project,
 };

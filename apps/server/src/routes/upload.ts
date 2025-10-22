@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { createRouteHandler } from "uploadthing/server";
-import { uploadRouter } from "./uploadthing";
+import { uploadRouter } from "../lib/uploadthing";
 
 const handlers = createRouteHandler({
   router: uploadRouter,

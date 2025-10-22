@@ -99,7 +99,7 @@ function Moodboard() {
               onClick={() => deleteImage(image.id)}
               disabled={image.isUploading}
               className='absolute top-2 right-2 bg-destructive text-destructive-foreground p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50'>
-              ×
+              X
             </button>
             <p className='text-sm mt-2 truncate'>{image.name}</p>
           </div>

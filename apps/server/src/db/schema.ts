@@ -85,6 +85,17 @@ export const project = pgTable("project", {
   visibility: visibilityEnum("visibility").notNull().default("private"),
 });
 
+export const moodboard = pgTable("moodboard", {
+  url: text("url").primaryKey(),
+  projectId: text("projectId")
+    .notNull()
+    .references(() => project.id, { onDelete: "cascade" }),
+  userId: text("userId")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 export const schema = {
   user,
   session,

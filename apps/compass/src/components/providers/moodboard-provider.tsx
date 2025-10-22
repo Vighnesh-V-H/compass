@@ -4,7 +4,7 @@ import { createContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useUploadThing } from "@/lib/uploadthing";
-
+ 
 interface MoodboardImage {
   id: string;
   url: string;
@@ -46,7 +46,7 @@ export function MoodboardProvider({ children }: { children: React.ReactNode }) {
 
         const newImages = res.map((file) => ({
           id: file.key,
-          url: file.url,
+          url: file.ufsUrl,
           name: file.name,
           isUploaded: true,
           isUploading: false,

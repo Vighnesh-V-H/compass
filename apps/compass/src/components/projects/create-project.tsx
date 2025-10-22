@@ -72,7 +72,7 @@ function CreateProject() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className='flex items-center justify-center size-40 border border-dashed rounded-lg cursor-pointer hover:border-primary/80 hover:bg-muted/50 transition-colors'>
+        <div className='flex items-center justify-center h-full w-full border border-dashed rounded-lg cursor-pointer hover:border-primary/80 hover:bg-muted/50 transition-colors'>
           <PlusIcon className='size-16 text-muted-foreground' />
         </div>
       </DialogTrigger>

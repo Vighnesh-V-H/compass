@@ -20,6 +20,7 @@
     "drizzle-kit": "^0.31.4",
     "drizzle-orm": "^0.44.5",
     "hono": "^4.9.6",
+    "ioredis": "^5.8.2",
     "nanoid": "^5.1.6",
     "postgres": "^3.4.7"
   }

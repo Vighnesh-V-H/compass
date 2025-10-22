@@ -7,18 +7,13 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
-import { Loader2, Key } from "lucide-react";
-import {
-  authClient,
-  signIn,
-  $ERROR_CODES as ERROR_CODES,
-} from "@/lib/auth-client";
+import { Loader2 } from "lucide-react";
+import { signIn, $ERROR_CODES as ERROR_CODES } from "@/lib/auth-client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -63,14 +58,22 @@ export default function SignInForm() {
                         setError(res.message);
                       } else setSuccess(res.message);
                     } catch (err) {
-                      setError("Unexpected response from server.");
+                      if (err instanceof Error && err.message) {
+                        setError(err.message);
+                      } else {
+                        setError("An unexpected error occurred.");
+                      }
                     }
                   },
                 }
               );
-            } catch (err: any) {
+            } catch (err) {
               setLoading(false);
-              setError(err?.message ?? "Something went wrong.");
+              if (err instanceof Error) {
+                setError(err.message);
+              } else {
+                setError("An unexpected error occurred.");
+              }
             }
           }}>
           <div className='grid gap-2'>
@@ -150,12 +153,11 @@ export default function SignInForm() {
                     callbackURL: `/projects`,
                   },
                   {
-                    onRequest: (ctx) => {
+                    onRequest: () => {
                       console.log(process.env.NEXT_PUBLIC_SERVER_URL);
                       setLoading(true);
                     },
-                    onResponse: (ctx) => {
-                      console.log("helo");
+                    onResponse: () => {
                       setLoading(false);
                     },
                   }

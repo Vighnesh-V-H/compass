@@ -86,7 +86,7 @@ function CreateProject() {
             <DialogTitle>Create project</DialogTitle>
             <DialogDescription>
               Give your new project a name and choose its visibility. Click
-              create when you're done.
+              create when you&apos;re done.
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>

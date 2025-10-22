@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { ChevronLeft, DraftingCompassIcon, Target } from "lucide-react";
+import { ChevronLeft, DraftingCompassIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {

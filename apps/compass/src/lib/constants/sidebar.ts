@@ -1,10 +1,5 @@
 import {
-  LayoutDashboard,
-  FileText,
   LucideIcon,
-  File,
-  TextSelect,
-  CheckSquare2,
   Settings,
   DraftingCompassIcon,
   CropIcon,

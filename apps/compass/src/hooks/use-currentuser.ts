@@ -8,8 +8,3 @@ export const useCurrentUser = (): User | null => {
   }
   return data.user;
 };
-
-export const isAuthenticated = async () => {
-  const user = await useCurrentUser();
-  return !!user;
-};

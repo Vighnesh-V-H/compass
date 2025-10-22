@@ -10,7 +10,7 @@ import { getFromLocalStorage, setToLocalStorage } from "@/lib/localstorage";
 import { PROJECTS_KEY } from "@/lib/constants/localstorage";
 
 function Projects() {
-  const { error, user, isPending } = useSession();
+  const { user, isPending } = useSession();
   const MINUTES = 30;
 
   async function getProjects() {

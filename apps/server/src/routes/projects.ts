@@ -100,7 +100,6 @@ router.delete("/project/:id", async (c) => {
       return c.json({ error: "Project ID is required" }, 400);
     }
 
-    // Check if project exists and belongs to user
     const existingProject = await db
       .select()
       .from(project)

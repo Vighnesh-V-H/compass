@@ -12,6 +12,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { deleteFromLocalStorage } from "@/lib/localstorage";
 import { PROJECTS_KEY } from "@/lib/constants/localstorage";
+import { toast } from "sonner";
 
 interface ProjectCardProps {
   project: Project;
@@ -28,25 +29,31 @@ function ProjectCard({ project }: ProjectCardProps) {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["projects"] });
-
+    },
+    onSuccess: () => {
       deleteFromLocalStorage(PROJECTS_KEY);
+      toast.success("Project deleted successfully");
     },
     onError: (error: unknown) => {
       console.error("Failed to delete project:", error);
+      toast.error("Failed to delete project. Please try again.");
     },
   });
 
-  const handleDelete = (e: React.MouseEvent) => {
+  const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+
     if (confirm("Are you sure you want to delete this project?")) {
-      deleteMutation.mutate(project.id);
+      await deleteMutation.mutateAsync(project.id);
     }
   };
 
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
+
     console.log("Share project:", project.id);
   };
 
@@ -68,7 +75,10 @@ function ProjectCard({ project }: ProjectCardProps) {
               <DropdownMenuTrigger asChild>
                 <button
                   className='p-1 hover:bg-muted rounded transition-colors'
-                  onClick={(e) => e.preventDefault()}>
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}>
                   <MoreVertical className='size-4 text-muted-foreground' />
                 </button>
               </DropdownMenuTrigger>
@@ -83,9 +93,10 @@ function ProjectCard({ project }: ProjectCardProps) {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleDelete}
+                  disabled={deleteMutation.isPending}
                   className='text-red-600'>
                   <Trash2 className='size-4 mr-2' />
-                  Delete
+                  {deleteMutation.isPending ? "Deleting..." : "Delete"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

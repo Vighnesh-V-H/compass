@@ -28,6 +28,8 @@ import {
   Visibility,
 } from "@compass/schemas";
 import { useRouter } from "next/navigation";
+import { deleteFromLocalStorage } from "@/lib/localstorage";
+import { PROJECTS_KEY } from "@/lib/constants/localstorage";
 
 function CreateProject() {
   const [name, setName] = useState("");
@@ -45,6 +47,7 @@ function CreateProject() {
   } = useMutation({
     mutationFn: async (data: CreateProjectInput) => {
       const validatedData = createProjectSchema.parse(data);
+      deleteFromLocalStorage(PROJECTS_KEY);
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects`,
         validatedData,
@@ -64,6 +67,7 @@ function CreateProject() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (visibility) {
       createProject({ name, visibility });
     }

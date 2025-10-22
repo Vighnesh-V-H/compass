@@ -5,6 +5,7 @@ import { project } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createProjectSchema } from "@compass/schemas";
 import { ZodError } from "zod";
+import { redis } from "@/lib/redis";
 
 const router = new Hono();
 
@@ -29,6 +30,9 @@ router.post("/projects", async (c) => {
         visibility: validatedData.visibility,
       })
       .returning();
+
+    const cacheKey = `projects:${session.user.id}`;
+    await redis.del(cacheKey);
 
     return c.json(
       {
@@ -59,10 +63,19 @@ router.get("/projects", async (c) => {
       return c.json({ error: "Unauthorized" }, 401);
     }
 
+    const cacheKey = `projects:${session.user.id}`;
+    const cachedProjects = await redis.get(cacheKey);
+
+    if (cachedProjects) {
+      return c.json({ projects: JSON.parse(cachedProjects) }, 200);
+    }
+
     const projects = await db
       .select()
       .from(project)
       .where(eq(project.userId, session.user.id));
+
+    await redis.set(cacheKey, JSON.stringify(projects), "EX", 3600);
 
     return c.json({ projects }, 200);
   } catch (error) {

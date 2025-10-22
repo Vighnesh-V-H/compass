@@ -49,7 +49,7 @@ function CreateProject() {
       const validatedData = createProjectSchema.parse(data);
       deleteFromLocalStorage(PROJECTS_KEY);
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/projects`,
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project`,
         validatedData,
         { withCredentials: true }
       );

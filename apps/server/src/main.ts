@@ -10,7 +10,7 @@ app.use(
   "/api/*",
   cors({
     origin: "http://localhost:3000",
-    allowMethods: ["GET", "POST", "OPTIONS"],
+    allowMethods: ["GET", "POST", "OPTIONS", "DELETE"],
     allowHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })

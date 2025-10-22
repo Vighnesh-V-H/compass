@@ -1,22 +1,48 @@
 "use client";
 import Link from "next/link";
 import { Project } from "@compass/schemas";
-import { MoreVertical, Trash2, Share2 } from "lucide-react";
+import { MoreVertical, Trash2, Share2, EditIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { deleteFromLocalStorage } from "@/lib/localstorage";
+import { PROJECTS_KEY } from "@/lib/constants/localstorage";
 
 interface ProjectCardProps {
   project: Project;
 }
 
 function ProjectCard({ project }: ProjectCardProps) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/project/${projectId}`,
+        { withCredentials: true }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+
+      deleteFromLocalStorage(PROJECTS_KEY);
+    },
+    onError: (error: unknown) => {
+      console.error("Failed to delete project:", error);
+    },
+  });
+
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log("Delete project:", project.id);
+    if (confirm("Are you sure you want to delete this project?")) {
+      deleteMutation.mutate(project.id);
+    }
   };
 
   const handleShare = (e: React.MouseEvent) => {
@@ -50,6 +76,10 @@ function ProjectCard({ project }: ProjectCardProps) {
                 <DropdownMenuItem onClick={handleShare}>
                   <Share2 className='size-4 mr-2' />
                   Share
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleShare}>
+                  <EditIcon className='size-4 mr-2' />
+                  Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleDelete}

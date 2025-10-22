@@ -34,14 +34,11 @@ export const auth = betterAuth({
     disableSessionRefresh: false,
     cookieCache: {
       enabled: true,
-      maxAge: 1 * 60,
+      maxAge: 10 * 60,
     },
 
     expiresIn: SESSION_EXPIRY_TIME,
     updateAge: SESSION_UPDATE_AGE,
   },
   plugins: [nextCookies()],
-  logger: {
-    level: "debug",
-  },
 });

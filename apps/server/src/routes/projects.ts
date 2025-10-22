@@ -9,7 +9,7 @@ import { redis } from "@/lib/redis";
 
 const router = new Hono();
 
-router.post("/projects", async (c) => {
+router.post("/project", async (c) => {
   try {
     const session = await auth.api.getSession({
       headers: new Headers(Object.entries(c.req.header())),
@@ -81,6 +81,54 @@ router.get("/projects", async (c) => {
   } catch (error) {
     console.error("Error while fetching projects:", error);
     return c.json({ error: "Failed to fetch projects" }, 500);
+  }
+});
+
+router.delete("/project/:id", async (c) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: new Headers(Object.entries(c.req.header())),
+    });
+
+    if (!session?.user) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const projectId = c.req.param("id");
+
+    if (!projectId) {
+      return c.json({ error: "Project ID is required" }, 400);
+    }
+
+    // Check if project exists and belongs to user
+    const existingProject = await db
+      .select()
+      .from(project)
+      .where(eq(project.id, projectId))
+      .limit(1);
+
+    if (existingProject.length === 0 || !existingProject[0]) {
+      return c.json({ error: "Project not found" }, 404);
+    }
+
+    if (existingProject[0].userId !== session.user.id) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+
+    await db.delete(project).where(eq(project.id, projectId));
+
+    const cacheKey = `projects:${session.user.id}`;
+    await redis.del(cacheKey);
+
+    return c.json(
+      {
+        message: "Project deleted successfully",
+      },
+      200
+    );
+  } catch (error) {
+    console.error("Error while deleting project:", error);
+    return c.json({ error: "Failed to delete project" }, 500);
   }
 });
 

@@ -1,5 +1,11 @@
+import Moodboard from "@/components/moodboard";
+
 function Project() {
-  return <div>v</div>;
+  return (
+    <div>
+      <Moodboard />
+    </div>
+  );
 }
 
 export default Project;

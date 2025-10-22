@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import authRouter from "@/routes/auth";
 import projectRouter from "@/routes/projects";
+import uploadRouter from "@/routes/upload";
 import { cors } from "hono/cors";
 import Bun from "bun";
 
@@ -10,14 +11,15 @@ app.use(
   "/api/*",
   cors({
     origin: "http://localhost:3000",
-    allowMethods: ["GET", "POST", "OPTIONS", "DELETE"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "OPTIONS", "DELETE", "PATCH"],
+    allowHeaders: ["*"],
     credentials: true,
   })
 );
 
 app.basePath("/api").route("/", authRouter);
 app.basePath("/api").route("/", projectRouter);
+app.basePath("/api").route("/", uploadRouter);
 
 Bun.serve({
   fetch: app.fetch,

@@ -9,6 +9,16 @@ export const getSession = async () => {
 
 export const useSession = () => {
   const session = authClient.useSession();
-  const { data, error, isPending, refetch } = session;
-  return { user: data?.user, error, refetch, isPending };
+
+ const token = session.data?.session.token;
+
+ if (!token) {
+   return { message: "session token not found please try to login again" };
+ }
+
+ if (!session.data?.user) {
+   return { message: "Unauthorized" };
+ }
+ const { data, error, isPending, refetch } = session;
+ return { user: data?.user, error, refetch, isPending, token };
 };

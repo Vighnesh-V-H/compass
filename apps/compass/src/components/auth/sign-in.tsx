@@ -16,6 +16,7 @@ import { Loader2 } from "lucide-react";
 import { signIn, $ERROR_CODES as ERROR_CODES } from "@/lib/auth-client";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { BEARER_TOKEN_KEY } from "@/lib/constants/localstorage";
 
 export default function SignInForm() {
   const [email, setEmail] = useState("");
@@ -53,6 +54,13 @@ export default function SignInForm() {
                   onResponse: async (ctx) => {
                     setLoading(false);
                     try {
+                      const authToken =
+                        ctx?.response.headers.get("set-auth-token");
+                      if (authToken) {
+                        localStorage.setItem(BEARER_TOKEN_KEY, authToken);
+                        console.log("Bearer token stored successfully");
+                      }
+
                       const res = await ctx?.response.clone().json();
                       if (ERROR_CODES[res.code as keyof typeof ERROR_CODES]) {
                         setError(res.message);
@@ -157,8 +165,16 @@ export default function SignInForm() {
                       console.log(process.env.NEXT_PUBLIC_SERVER_URL);
                       setLoading(true);
                     },
-                    onResponse: () => {
+                    onResponse: (ctx) => {
                       setLoading(false);
+                      const authToken =
+                        ctx?.response.headers.get("set-auth-token");
+                      if (authToken) {
+                        localStorage.setItem(BEARER_TOKEN_KEY, authToken);
+                        console.log(
+                          "Bearer token stored successfully (Google)"
+                        );
+                      }
                     },
                   }
                 );

@@ -5,6 +5,7 @@ import Canvas from "@/components/canvas";
 import Moodboard from "@/components/moodboard";
 import { useSearchParams } from "next/navigation";
 
+
 function Project() {
   const searchParams = useSearchParams();
   const currentTab = searchParams.get("tab") || "moodboard";
@@ -13,7 +14,7 @@ function Project() {
     <div className='container flex items-center  flex-col mx-auto '>
       <TabList />
 
-      <div className='mt-2 w-full p-3'>
+      <div className='mt-2 w-full p-3 min-h-[80vh]'>
         {currentTab === "moodboard" && <Moodboard />}
         {currentTab === "canvas" && <Canvas />}
       </div>

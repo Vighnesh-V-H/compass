@@ -2,6 +2,7 @@ import {
   boolean,
   pgEnum,
   pgTable,
+  serial,
   text,
   timestamp,
   varchar,
@@ -86,7 +87,8 @@ export const project = pgTable("project", {
 });
 
 export const moodboard = pgTable("moodboard", {
-  url: text("url").primaryKey(),
+  id: serial("id").primaryKey(),
+  url: text("url").notNull(),
   projectId: text("projectId")
     .notNull()
     .references(() => project.id, { onDelete: "cascade" }),

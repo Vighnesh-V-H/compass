@@ -17,6 +17,7 @@ function TabList() {
       <TabsList className='w-fit mt-3'>
         <TabsTrigger
           value='canvas'
+          className='cursor-pointer'
           onClick={() => handleTabChange("canvas")}
           data-state={currentTab === "canvas" ? "active" : "inactive"}>
           Canvas
@@ -24,6 +25,7 @@ function TabList() {
         <TabsTrigger
           value='moodboard'
           onClick={() => handleTabChange("moodboard")}
+          className='cursor-pointer'
           data-state={currentTab === "moodboard" ? "active" : "inactive"}>
           Moodboard
         </TabsTrigger>

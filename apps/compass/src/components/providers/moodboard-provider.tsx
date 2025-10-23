@@ -1,14 +1,16 @@
 "use client";
 
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useUploadThing } from "@/lib/uploadthing";
- 
+import { BEARER_TOKEN_KEY } from "@/lib/constants/localstorage";
+
 interface MoodboardImage {
   id: string;
   url: string;
   name: string;
+  projectid: string;
   isUploaded: boolean;
   isUploading: boolean;
   uploadedAt: Date;
@@ -31,15 +33,27 @@ export const MoodboardContext = createContext<MoodboardContextType | undefined>(
   undefined
 );
 
-export function MoodboardProvider({ children }: { children: React.ReactNode }) {
+export function MoodboardProvider({
+  children,
+  projectid,
+}: {
+  children: React.ReactNode;
+  projectid: string;
+}) {
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [bearerToken, setBearerToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem(BEARER_TOKEN_KEY);
+    if (token && token !== bearerToken) {
+      setBearerToken(token);
+    }
+  }, [bearerToken]);
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
-      console.log("Upload Completed", res);
       toast.success("Upload complete!");
-
       if (res) {
         const currentImages = watch("images");
         const permanentImages = currentImages.filter((img) => !img.isUploading);
@@ -49,6 +63,7 @@ export function MoodboardProvider({ children }: { children: React.ReactNode }) {
           url: file.ufsUrl,
           name: file.name,
           isUploaded: true,
+          projectid,
           isUploading: false,
           uploadedAt: new Date(),
         }));
@@ -70,8 +85,10 @@ export function MoodboardProvider({ children }: { children: React.ReactNode }) {
 
       setIsUploading(false);
     },
-    onUploadBegin: (fileName) => {
-      console.log("Upload started for:", fileName);
+    headers: async () => {
+      return { Authorization: `Bearer ${bearerToken}` };
+    },
+    onUploadBegin: () => {
       setIsUploading(true);
     },
   });
@@ -93,13 +110,14 @@ export function MoodboardProvider({ children }: { children: React.ReactNode }) {
         url: URL.createObjectURL(file),
         name: file.name,
         isUploaded: false,
+        projectid,
         isUploading: true,
         uploadedAt: new Date(),
       };
 
       setValue("images", [...watch("images"), tempImage]);
 
-      await startUpload([file]);
+      await startUpload([file], { projectId: projectid });
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error("Failed to upload image");
@@ -123,6 +141,7 @@ export function MoodboardProvider({ children }: { children: React.ReactNode }) {
         isUploading,
         deleteImage,
         uploadImage,
+
         images,
       }}>
       {children}

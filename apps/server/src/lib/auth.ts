@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { SESSION_EXPIRY_TIME, SESSION_UPDATE_AGE } from "./constants";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/db";
+import { bearer } from "better-auth/plugins";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -40,5 +41,5 @@ export const auth = betterAuth({
     expiresIn: SESSION_EXPIRY_TIME,
     updateAge: SESSION_UPDATE_AGE,
   },
-  plugins: [nextCookies()],
+  plugins: [nextCookies(), bearer()],
 });

@@ -12,10 +12,21 @@ app.use(
   cors({
     origin: "http://localhost:3000",
     allowMethods: ["GET", "POST", "OPTIONS", "DELETE", "PATCH"],
-    allowHeaders: ["*"],
+    allowHeaders: [
+      "Content-Type",
+      "Authorization",
+      "x-uploadthing-package",
+      "x-uploadthing-version",
+      "traceparent",
+      "b3",
+      "x-session-token",
+      "Authorization",
+    ],
     credentials: true,
   })
 );
+
+
 
 app.basePath("/api").route("/", authRouter);
 app.basePath("/api").route("/", projectRouter);

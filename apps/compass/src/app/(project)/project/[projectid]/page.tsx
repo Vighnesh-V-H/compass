@@ -1,6 +1,5 @@
 "use client";
 
-import TabList from "@/components/tablist";
 import Canvas from "@/components/canvas";
 import Moodboard from "@/components/moodboard";
 import { useSearchParams } from "next/navigation";
@@ -11,10 +10,8 @@ function Project() {
   const currentTab = searchParams.get("tab") || "moodboard";
 
   return (
-    <div className='container flex items-center  flex-col mx-auto '>
-      <TabList />
-
-      <div className='mt-2 w-full p-3 min-h-[80vh]'>
+    <div className='container flex items-center flex-col mx-auto'>
+      <div className=' w-full '>
         {currentTab === "moodboard" && <Moodboard />}
         {currentTab === "canvas" && <Canvas />}
       </div>

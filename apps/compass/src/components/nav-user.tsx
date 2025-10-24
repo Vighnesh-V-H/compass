@@ -27,11 +27,23 @@ import {
 } from "@/components/ui/sidebar";
 import { useCurrentUser } from "@/hooks/use-currentuser";
 import { signOut } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export function NavUser() {
   const user = useCurrentUser();
 
   const { isMobile } = useSidebar();
+  const router = useRouter();
+
+  function handleSignout() {
+    signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/auth/signin");
+        },
+      },
+    });
+  }
 
   return (
     <SidebarMenu className='bg-black rounded-lg'>
@@ -100,7 +112,7 @@ export function NavUser() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className='cursor-pointer'
-              onClick={() => signOut()}>
+              onClick={handleSignout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

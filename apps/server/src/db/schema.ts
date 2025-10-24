@@ -89,6 +89,7 @@ export const project = pgTable("project", {
 export const moodboard = pgTable("moodboard", {
   id: serial("id").primaryKey(),
   url: text("url").notNull(),
+  name: text("name"),
   projectId: text("projectId")
     .notNull()
     .references(() => project.id, { onDelete: "cascade" }),

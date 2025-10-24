@@ -11,7 +11,6 @@ const router = new Hono();
 
 router.post("/project", async (c) => {
   try {
-    console.log(c.req.header());
     const session = await auth.api.getSession({
       headers: new Headers(Object.entries(c.req.header())),
     });

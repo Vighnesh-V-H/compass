@@ -4,7 +4,10 @@ import { uploadRouter } from "../lib/uploadthing";
 
 const handlers = createRouteHandler({
   router: uploadRouter,
-  config: { callbackUrl: process.env.CALLBACK_URL, isDev: true },
+  config: {
+    callbackUrl: process.env.CALLBACK_URL,
+    isDev: true,
+  },
 });
 
 const app = new Hono();

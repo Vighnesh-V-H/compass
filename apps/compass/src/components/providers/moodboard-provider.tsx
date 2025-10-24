@@ -1,8 +1,16 @@
 "use client";
 
-import { createContext, useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import {
+  createContext,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import { toast } from "sonner";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
 import { useUploadThing } from "@/lib/uploadthing";
 import { BEARER_TOKEN_KEY } from "@/lib/constants/localstorage";
 
@@ -10,19 +18,17 @@ interface MoodboardImage {
   id: string;
   url: string;
   name: string;
-  projectid: string;
+  projectId: string;
   isUploaded: boolean;
   isUploading: boolean;
   uploadedAt: Date;
-}
-
-interface MoodboardImages {
-  images: MoodboardImage[];
+  createdAt: Date;
 }
 
 interface MoodboardContextType {
   images: MoodboardImage[];
   isUploading: boolean;
+  isLoading: boolean;
   dragActive: boolean;
   setDragActive: (active: boolean) => void;
   uploadImage: (file: File) => Promise<void>;
@@ -33,42 +39,96 @@ export const MoodboardContext = createContext<MoodboardContextType | undefined>(
   undefined
 );
 
+async function fetchMoodboardImages(
+  projectId: string
+): Promise<MoodboardImage[]> {
+  const response = await axios.get(
+    `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}`,
+    {
+      withCredentials: true,
+    }
+  );
+
+  return (response.data.images || []).map((img: MoodboardImage) => ({
+    id: img.id,
+    url: img.url,
+    name: img.name,
+    projectId: img.projectId || projectId,
+    isUploaded: true,
+    isUploading: false,
+    uploadedAt: new Date(img.uploadedAt || img.createdAt),
+    createdAt: new Date(img.createdAt),
+  }));
+}
+
 export function MoodboardProvider({
   children,
-  projectid,
+  projectId,
 }: {
   children: React.ReactNode;
-  projectid: string;
+  projectId: string;
 }) {
+  const [localImages, setLocalImages] = useState<MoodboardImage[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [bearerToken, setBearerToken] = useState<string | null>(null);
+  const tempUrlsRef = useRef<Set<string>>(new Set());
+  const queryClient = useQueryClient();
+
+  const bearerToken = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem(BEARER_TOKEN_KEY);
+  }, []);
+
+  const {
+    data: fetchedImages = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["moodboard", projectId],
+    queryFn: () => fetchMoodboardImages(projectId),
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    enabled: !!projectId && !!bearerToken,
+  });
 
   useEffect(() => {
-    const token = window.localStorage.getItem(BEARER_TOKEN_KEY);
-    if (token && token !== bearerToken) {
-      setBearerToken(token);
+    if (error) {
+      toast.error("Failed to load moodboard images");
+      console.error("Moodboard fetch error:", error);
     }
-  }, [bearerToken]);
+  }, [error]);
+
+  const images = useMemo(
+    () => [...fetchedImages, ...localImages.filter((img) => img.isUploading)],
+    [fetchedImages, localImages]
+  );
+
+  // useEffect(() => {
+  //   return () => {
+  //     tempUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  //     tempUrlsRef.current.clear();
+  //   };
+  // }, []);
 
   const { startUpload } = useUploadThing("imageUploader", {
     onClientUploadComplete: (res) => {
       toast.success("Upload complete!");
+
       if (res) {
-        const currentImages = watch("images");
-        const permanentImages = currentImages.filter((img) => !img.isUploading);
+        setLocalImages((prev) => {
+          const uploadingImages = prev.filter((img) => img.isUploading);
+          uploadingImages.forEach((img) => {
+            if (tempUrlsRef.current.has(img.url)) {
+              URL.revokeObjectURL(img.url);
+              tempUrlsRef.current.delete(img.url);
+            }
+          });
+          return prev.filter((img) => !img.isUploading);
+        });
 
-        const newImages = res.map((file) => ({
-          id: file.key,
-          url: file.ufsUrl,
-          name: file.name,
-          isUploaded: true,
-          projectid,
-          isUploading: false,
-          uploadedAt: new Date(),
-        }));
-
-        setValue("images", [...permanentImages, ...newImages]);
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["moodboard", projectId] });
+        }, 0);
       }
 
       setIsUploading(false);
@@ -77,11 +137,16 @@ export function MoodboardProvider({
       console.error("Upload error:", error);
       toast.error(`Upload failed: ${error.message}`);
 
-      const currentImages = watch("images");
-      setValue(
-        "images",
-        currentImages.filter((img) => !img.isUploading)
-      );
+      setLocalImages((prev) => {
+        const uploadingImages = prev.filter((img) => img.isUploading);
+        uploadingImages.forEach((img) => {
+          if (tempUrlsRef.current.has(img.url)) {
+            URL.revokeObjectURL(img.url);
+            tempUrlsRef.current.delete(img.url);
+          }
+        });
+        return prev.filter((img) => !img.isUploading);
+      });
 
       setIsUploading(false);
     },
@@ -93,57 +158,93 @@ export function MoodboardProvider({
     },
   });
 
-  const form = useForm<MoodboardImages>({
-    defaultValues: {
-      images: [],
+  const uploadImage = useCallback(
+    async (file: File) => {
+      if (!bearerToken) {
+        toast.error("No authentication token available");
+        return;
+      }
+
+      try {
+        const tempId = `temp-${Date.now()}-${Math.random()}`;
+        const tempUrl = URL.createObjectURL(file);
+        tempUrlsRef.current.add(tempUrl);
+
+        const tempImage: MoodboardImage = {
+          id: tempId,
+          url: tempUrl,
+          name: file.name,
+          isUploaded: false,
+          projectId,
+          isUploading: true,
+          uploadedAt: new Date(),
+          createdAt: new Date(),
+        };
+
+        setLocalImages((prev) => [...prev, tempImage]);
+        await startUpload([file], { projectId });
+      } catch (error) {
+        console.error("Upload failed:", error);
+        toast.error("Failed to upload image");
+        setIsUploading(false);
+      }
     },
-  });
+    [projectId, startUpload, bearerToken]
+  );
 
-  const { watch, setValue } = form;
-  const images = watch("images");
+  const deleteImage = useCallback(
+    async (id: string) => {
+      try {
+        setLocalImages((prev) => {
+          const imageToDelete = prev.find((img) => img.id === id);
+          if (imageToDelete && tempUrlsRef.current.has(imageToDelete.url)) {
+            URL.revokeObjectURL(imageToDelete.url);
+            tempUrlsRef.current.delete(imageToDelete.url);
+          }
+          return prev.filter((img) => img.id !== id);
+        });
 
-  async function uploadImage(file: File) {
-    try {
-      const tempId = `temp-${Date.now()}-${Math.random()}`;
-      const tempImage: MoodboardImage = {
-        id: tempId,
-        url: URL.createObjectURL(file),
-        name: file.name,
-        isUploaded: false,
-        projectid,
-        isUploading: true,
-        uploadedAt: new Date(),
-      };
+        queryClient.setQueryData<MoodboardImage[]>(
+          ["moodboard", projectId],
+          (old) => (old ? old.filter((img) => img.id !== id) : [])
+        );
 
-      setValue("images", [...watch("images"), tempImage]);
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}/images/${id}`,
+          {
+            withCredentials: true,
+            headers: { Authorization: `Bearer ${bearerToken}` },
+          }
+        );
 
-      await startUpload([file], { projectId: projectid });
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error("Failed to upload image");
-      setIsUploading(false);
-    }
-  }
+        toast.success("Image removed");
 
-  async function deleteImage(id: string) {
-    setValue(
-      "images",
-      images.filter((img) => img.id !== id)
-    );
-    toast.success("Image removed");
-  }
+        queryClient.invalidateQueries({ queryKey: ["moodboard", projectId] });
+      } catch (error) {
+        console.error("Delete failed:", error);
+        toast.error("Failed to delete image");
+
+        queryClient.invalidateQueries({ queryKey: ["moodboard", projectId] });
+      }
+    },
+    [projectId, queryClient, bearerToken]
+  );
+
+  const contextValue = useMemo(
+    () => ({
+      dragActive,
+      setDragActive,
+      isUploading,
+      isLoading,
+      deleteImage,
+      uploadImage,
+      images,
+    }),
+    [dragActive, isUploading, isLoading, deleteImage, uploadImage, images]
+  );
 
   return (
-    <MoodboardContext.Provider
-      value={{
-        dragActive,
-        setDragActive,
-        isUploading,
-        deleteImage,
-        uploadImage,
-
-        images,
-      }}>
+    <MoodboardContext.Provider value={contextValue}>
       {children}
     </MoodboardContext.Provider>
   );

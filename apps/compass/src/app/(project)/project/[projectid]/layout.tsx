@@ -11,6 +11,6 @@ export default function ProjectLayout({
   const { projectid } = use(params);
 
   return (
-    <MoodboardProvider projectid={projectid}>{children}</MoodboardProvider>
+    <MoodboardProvider projectId={projectid}>{children}</MoodboardProvider>
   );
 }

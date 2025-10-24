@@ -46,6 +46,7 @@ export default function SignInForm() {
                 {
                   email,
                   password,
+                  callbackURL: "/projects",
                 },
                 {
                   onRequest: () => {

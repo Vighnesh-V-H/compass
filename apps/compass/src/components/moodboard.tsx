@@ -86,7 +86,9 @@ function Moodboard() {
               <Image
                 src={image.url}
                 alt={image.name}
+                priority
                 fill
+                sizes='300'
                 className='object-cover rounded-lg'
               />
               {image.isUploading && (

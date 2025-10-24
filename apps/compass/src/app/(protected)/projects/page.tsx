@@ -39,7 +39,10 @@ function Projects() {
     gcTime: 1000 * MINUTES,
   });
 
-  if (isPending || isLoading) {
+  if (isPending) {
+    return <Loader />;
+  }
+  if (isLoading) {
     return <Loader />;
   }
 

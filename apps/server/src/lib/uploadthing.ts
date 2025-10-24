@@ -48,6 +48,7 @@ export const uploadRouter = {
         await db.insert(moodboard).values({
           projectId,
           url: file.ufsUrl,
+          name: file.name,
           userId,
         });
 

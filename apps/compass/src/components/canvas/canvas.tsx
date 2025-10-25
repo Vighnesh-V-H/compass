@@ -9,6 +9,7 @@ import {
   PencilBrush,
   Point,
   Textbox,
+  FabricText,
 } from "fabric";
 import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
@@ -16,6 +17,8 @@ import { useCanvasStore } from "@/store/canvas-store";
 function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const textboxRef = useRef<Textbox | null>(null);
+
   const [isReady, setIsReady] = useState(false);
 
   const {
@@ -29,7 +32,6 @@ function Canvas() {
     setZoom,
   } = useCanvasStore();
 
-  // Initialize Fabric.js canvas
   useEffect(() => {
     if (!canvasRef.current) return;
 
@@ -186,6 +188,7 @@ function Canvas() {
           if (isErasing) {
             addToHistory({ elements: canvas.getObjects() });
           }
+
           setIsDrawing(false);
           isErasing = false;
           eraserPath = [];
@@ -208,6 +211,7 @@ function Canvas() {
         mouseDownHandler = (o) => {
           if (o.e.button !== 0 || o.e.shiftKey) return;
           const pointer = canvas.getScenePoint(o.e);
+
           const textbox = new Textbox("", {
             left: pointer.x,
             top: pointer.y,
@@ -216,14 +220,26 @@ function Canvas() {
             backgroundColor: "#000",
           });
 
+          textboxRef.current = textbox;
+
           canvas.add(textbox);
           canvas.setActiveObject(textbox);
           textbox.enterEditing();
+
+          textbox.on("editing:exited", () => {
+            if (!textbox.text || textbox.text.trim() === "") {
+              canvas.remove(textbox);
+              canvas.requestRenderAll();
+              textboxRef.current = null;
+            } else {
+              addToHistory({ elements: canvas.getObjects() });
+            }
+          });
+
           setIsDrawing(true);
         };
 
         mouseUpHandler = () => {
-          addToHistory({ elements: canvas.getObjects() });
           setIsDrawing(false);
           setSelectedTool("select");
         };
@@ -327,6 +343,14 @@ function Canvas() {
           if (isDown && shape) {
             addToHistory({ elements: canvas.getObjects() });
           }
+          const tb = textboxRef.current;
+          if (tb && !tb.isEditing && (!tb.text || tb.text.trim() === "")) {
+            tb.visible = false;
+            canvas.remove(tb);
+            canvas.requestRenderAll();
+            textboxRef.current = null;
+          }
+
           setIsDrawing(false);
           setSelectedTool("select");
           isDown = false;
@@ -437,6 +461,74 @@ function Canvas() {
       canvas.off("object:removed", saveState);
     };
   }, [isReady, addToHistory]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !isReady) return;
+
+    const canvas = fabricCanvasRef.current;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in a textbox
+      const activeObject = canvas.getActiveObject();
+      if (
+        activeObject &&
+        activeObject.type === "textbox" &&
+        (activeObject as Textbox).isEditing
+      ) {
+        return;
+      }
+
+      // Delete selected objects
+      if (e.key === "Delete" || e.key === "Backspace") {
+        const activeObjects = canvas.getActiveObjects();
+        if (activeObjects.length > 0) {
+          activeObjects.forEach((obj) => canvas.remove(obj));
+          canvas.discardActiveObject();
+          canvas.requestRenderAll();
+          addToHistory({ elements: canvas.getObjects() });
+        }
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case "v":
+          setSelectedTool("select");
+          break;
+        case "r":
+          setSelectedTool("rectangle");
+          break;
+        case "c":
+          setSelectedTool("circle");
+          break;
+        case "t":
+          setSelectedTool("triangle");
+          break;
+        case "p":
+        case "b":
+          setSelectedTool("draw");
+          break;
+        case "e":
+          setSelectedTool("eraser");
+          break;
+        case "f":
+          setSelectedTool("frame");
+          break;
+        case "x":
+          setSelectedTool("text");
+          break;
+        case "h":
+          setSelectedTool("hand");
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isReady, addToHistory, setSelectedTool]);
 
   return (
     <div className='w-full h-screen overflow-hidden relative'>

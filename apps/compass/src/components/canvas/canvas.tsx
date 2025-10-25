@@ -9,10 +9,14 @@ import {
   PencilBrush,
   Point,
   Textbox,
-  FabricText,
+  TEvent,
+  TPointerEvent,
+  FabricObject,
+  FabricObjectProps,
 } from "fabric";
 import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
+import { ChatForm } from "./chat";
 
 function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -71,7 +75,6 @@ function Canvas() {
     canvas.requestRenderAll();
   }, [zoom, isReady]);
 
-  // Handle pan changes
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
 
@@ -88,8 +91,7 @@ function Canvas() {
 
     const canvas = fabricCanvasRef.current;
 
-    // @ts-expect-error errors
-    const handleWheel = (opt) => {
+    const handleWheel = (opt: TEvent<WheelEvent>) => {
       if (!opt.e.ctrlKey) return;
 
       const delta = opt.e.deltaY;
@@ -116,14 +118,12 @@ function Canvas() {
     const canvas = fabricCanvasRef.current;
     const shapeTools = ["rectangle", "circle", "triangle", "frame"];
 
-    // Reset canvas state
     canvas.isDrawingMode = false;
     canvas.selection = selectedTool === "select" || selectedTool === null;
     canvas.defaultCursor = "default";
     canvas.hoverCursor = "move";
 
-    // @ts-expect-error errors
-    let mouseDownHandler: ((o) => void) | undefined;
+    let mouseDownHandler: ((o: TEvent<TPointerEvent>) => void) | undefined;
     // @ts-expect-error errors
     let mouseMoveHandler: ((o) => void) | undefined;
     let mouseUpHandler: (() => void) | undefined;
@@ -151,7 +151,7 @@ function Canvas() {
         let eraserPath = [];
 
         mouseDownHandler = (o) => {
-          if (o.e.button !== 0 || o.e.shiftKey) return;
+          if (o.e.shiftKey) return;
           isErasing = true;
           const pointer = canvas.getScenePoint(o.e);
           eraserPath = [pointer];
@@ -170,7 +170,6 @@ function Canvas() {
           objects.forEach((obj) => {
             const objBounds = obj.getBoundingRect();
 
-            // Check if eraser path intersects with any object (paths, shapes, text, etc.)
             if (
               pointer.x >= objBounds.left - eraserSize &&
               pointer.x <= objBounds.left + objBounds.width + eraserSize &&
@@ -209,7 +208,7 @@ function Canvas() {
         canvas.selection = false;
 
         mouseDownHandler = (o) => {
-          if (o.e.button !== 0 || o.e.shiftKey) return;
+          if (o.e.shiftKey) return;
           const pointer = canvas.getScenePoint(o.e);
 
           const textbox = new Textbox("", {
@@ -256,12 +255,12 @@ function Canvas() {
         canvas.selection = false;
 
         let isDown = false;
-        let shape: any = null;
+        let shape: FabricObject<FabricObjectProps>;
         let startX = 0;
         let startY = 0;
 
         mouseDownHandler = (o) => {
-          if (o.e.button !== 0 || o.e.shiftKey) return;
+          if (o.e.shiftKey) return;
           isDown = true;
           const pointer = canvas.getScenePoint(o.e);
           startX = pointer.x;
@@ -354,7 +353,7 @@ function Canvas() {
           setIsDrawing(false);
           setSelectedTool("select");
           isDown = false;
-          shape = null;
+          shape;
         };
 
         canvas.on("mouse:down", mouseDownHandler);
@@ -380,6 +379,7 @@ function Canvas() {
     let lastPosX = 0;
     let lastPosY = 0;
 
+    // @ts-expect-error errors
     const startPan = (o) => {
       const isHandTool = selectedTool === "hand";
       const isMiddle = o.e.button === 1;
@@ -462,14 +462,12 @@ function Canvas() {
     };
   }, [isReady, addToHistory]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
 
     const canvas = fabricCanvasRef.current;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in a textbox
       const activeObject = canvas.getActiveObject();
       if (
         activeObject &&
@@ -479,7 +477,6 @@ function Canvas() {
         return;
       }
 
-      // Delete selected objects
       if (e.key === "Delete" || e.key === "Backspace") {
         const activeObjects = canvas.getActiveObjects();
         if (activeObjects.length > 0) {
@@ -531,8 +528,9 @@ function Canvas() {
   }, [isReady, addToHistory, setSelectedTool]);
 
   return (
-    <div className='w-full h-screen overflow-hidden relative'>
+    <div className='w-full overflow-hidden relative'>
       <canvas ref={canvasRef} />
+      <ChatForm />
       <CanvasToolbar />
     </div>
   );

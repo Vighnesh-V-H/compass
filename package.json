@@ -11,8 +11,8 @@
   "packageManager": "bun@1.1.9",
   "private": true,
   "scripts": {
-  "build": "turbo run build",
-  "dev": "turbo run dev --filter=@compass/server --filter=compass --parallel",
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@compass/server --filter=compass --parallel",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
@@ -20,5 +20,8 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "dependencies": {
+    "ai": "^5.0.78"
+  }
 }

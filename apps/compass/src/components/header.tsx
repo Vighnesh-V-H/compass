@@ -11,7 +11,7 @@ interface HeaderProps {
 
 export function Header({ children }: HeaderProps) {
   return (
-    <header className='w-full border-b bg-background'>
+    <header className='w-full bg-background'>
       <div className='flex h-16 items-center justify-between px-4'>
         <div className='flex items-center gap-4'>
           <Button variant='ghost' size='sm' asChild>

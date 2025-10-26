@@ -17,6 +17,7 @@ import {
 import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
 import { ChatForm } from "./chat";
+import { Frame, FrameData } from "./frame";
 
 function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -24,6 +25,9 @@ function Canvas() {
   const textboxRef = useRef<Textbox | null>(null);
 
   const [isReady, setIsReady] = useState(false);
+  const [frames, setFrames] = useState<FrameData[]>([]);
+  const [selectedFrameId, setSelectedFrameId] = useState<string | null>(null);
+  const [tempFrame, setTempFrame] = useState<FrameData | null>(null);
 
   const {
     selectedTool,
@@ -116,7 +120,7 @@ function Canvas() {
     if (!fabricCanvasRef.current || !isReady) return;
 
     const canvas = fabricCanvasRef.current;
-    const shapeTools = ["rectangle", "circle", "triangle", "frame"];
+    // const shapeTools = ["rectangle", "circle", "triangle", "frame"];
 
     canvas.isDrawingMode = false;
     canvas.selection = selectedTool === "select" || selectedTool === null;
@@ -250,7 +254,6 @@ function Canvas() {
       case "rectangle":
       case "circle":
       case "triangle":
-      case "frame":
         canvas.defaultCursor = "crosshair";
         canvas.selection = false;
 
@@ -267,15 +270,12 @@ function Canvas() {
           startY = pointer.y;
 
           const commonProps = {
-            fill:
-              selectedTool === "frame"
-                ? "transparent"
-                : "rgba(59, 130, 246, 0.3)",
+            fill: "rgba(59, 130, 246, 0.3)",
             stroke: "#3b82f6",
             strokeWidth: 2,
           };
 
-          if (selectedTool === "rectangle" || selectedTool === "frame") {
+          if (selectedTool === "rectangle") {
             shape = new Rect({
               ...commonProps,
               left: startX,
@@ -314,11 +314,7 @@ function Canvas() {
           const dx = pointer.x - startX;
           const dy = pointer.y - startY;
 
-          if (
-            selectedTool === "rectangle" ||
-            selectedTool === "frame" ||
-            selectedTool === "triangle"
-          ) {
+          if (selectedTool === "rectangle" || selectedTool === "triangle") {
             shape.set({
               width: Math.abs(dx),
               height: Math.abs(dy),
@@ -353,7 +349,58 @@ function Canvas() {
           setIsDrawing(false);
           setSelectedTool("select");
           isDown = false;
-          shape;
+        };
+
+        canvas.on("mouse:down", mouseDownHandler);
+        canvas.on("mouse:move", mouseMoveHandler);
+        canvas.on("mouse:up", mouseUpHandler);
+        break;
+
+      case "frame":
+        canvas.defaultCursor = "crosshair";
+        canvas.selection = false;
+
+        let frameStartX = 0;
+        let frameStartY = 0;
+
+        mouseDownHandler = (o) => {
+          if (o.e.shiftKey) return;
+          const pointer = canvas.getScenePoint(o.e);
+          frameStartX = pointer.x;
+          frameStartY = pointer.y;
+          setTempFrame({
+            id: `temp-${Date.now()}`,
+            x: frameStartX,
+            y: frameStartY,
+            width: 0,
+            height: 0,
+          });
+        };
+
+        mouseMoveHandler = (o) => {
+          const pointer = canvas.getScenePoint(o.e);
+          const width = Math.abs(pointer.x - frameStartX);
+          const height = Math.abs(pointer.y - frameStartY);
+          const x = Math.min(frameStartX, pointer.x);
+          const y = Math.min(frameStartY, pointer.y);
+
+          setTempFrame((prev) =>
+            prev ? { ...prev, x, y, width, height } : null
+          );
+        };
+
+        mouseUpHandler = () => {
+          if (tempFrame && (tempFrame.width > 10 || tempFrame.height > 10)) {
+            setFrames((prev) => [
+              ...prev,
+              {
+                ...tempFrame,
+                id: `frame-${Date.now()}`,
+              },
+            ]);
+          }
+          setTempFrame(null);
+          setSelectedTool("select");
         };
 
         canvas.on("mouse:down", mouseDownHandler);
@@ -369,7 +416,14 @@ function Canvas() {
       if (mouseMoveHandler) canvas.off("mouse:move", mouseMoveHandler);
       if (mouseUpHandler) canvas.off("mouse:up", mouseUpHandler);
     };
-  }, [selectedTool, isReady, setIsDrawing, addToHistory, setSelectedTool]);
+  }, [
+    selectedTool,
+    isReady,
+    setIsDrawing,
+    addToHistory,
+    setSelectedTool,
+    tempFrame,
+  ]);
 
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
@@ -530,6 +584,43 @@ function Canvas() {
   return (
     <div className='w-full overflow-hidden relative'>
       <canvas ref={canvasRef} />
+
+      {/* Render all frames */}
+      {frames.map((frame) => (
+        <Frame
+          key={frame.id}
+          frame={frame}
+          zoom={zoom}
+          pan={pan}
+          isSelected={selectedFrameId === frame.id}
+          isSelectTool={selectedTool === "select" || selectedTool === null}
+          onSelect={setSelectedFrameId}
+          onMove={(id, x, y) => {
+            setFrames((prev) =>
+              prev.map((f) => (f.id === id ? { ...f, x, y } : f))
+            );
+          }}
+          onDelete={(id) => {
+            setFrames((prev) => prev.filter((f) => f.id !== id));
+            setSelectedFrameId(null);
+          }}
+        />
+      ))}
+
+      {/* Render temporary frame while drawing */}
+      {tempFrame && (
+        <div
+          className='absolute border-2 border-dashed border-blue-500 bg-[#171717]/50 pointer-events-none'
+          style={{
+            left: tempFrame.x + pan.x,
+            top: tempFrame.y + pan.y,
+            width: tempFrame.width,
+            height: tempFrame.height,
+            transformOrigin: "0 0",
+          }}
+        />
+      )}
+
       <ChatForm />
       <CanvasToolbar />
     </div>

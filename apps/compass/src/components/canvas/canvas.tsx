@@ -116,7 +116,7 @@ function Canvas() {
     if (!fabricCanvasRef.current || !isReady) return;
 
     const canvas = fabricCanvasRef.current;
-    const shapeTools = ["rectangle", "circle", "triangle", "frame"];
+    // const shapeTools = ["rectangle", "circle", "triangle", "frame"];
 
     canvas.isDrawingMode = false;
     canvas.selection = selectedTool === "select" || selectedTool === null;
@@ -174,7 +174,8 @@ function Canvas() {
               pointer.x >= objBounds.left - eraserSize &&
               pointer.x <= objBounds.left + objBounds.width + eraserSize &&
               pointer.y >= objBounds.top - eraserSize &&
-              pointer.y <= objBounds.top + objBounds.height + eraserSize
+              pointer.y <= objBounds.top + objBounds.height + eraserSize &&
+              !obj.lockRotation
             ) {
               canvas.remove(obj);
             }
@@ -275,13 +276,27 @@ function Canvas() {
             strokeWidth: 2,
           };
 
-          if (selectedTool === "rectangle" || selectedTool === "frame") {
+          if (selectedTool === "rectangle") {
             shape = new Rect({
               ...commonProps,
               left: startX,
               top: startY,
               width: 0,
               height: 0,
+            });
+          } else if (selectedTool === "frame") {
+            shape = new Rect({
+              ...commonProps,
+              left: startX,
+              top: startY,
+              fill: "transparent",
+              width: 0,
+              height: 0,
+              stroke: "#fff000",
+              backgroundColor: "#0f0f0f",
+              strokeWidth: 1,
+              evented: false,
+              lockRotation: true,
             });
           } else if (selectedTool === "circle") {
             shape = new Circle({
@@ -295,6 +310,7 @@ function Canvas() {
               ...commonProps,
               left: startX,
               top: startY,
+
               width: 0,
               height: 0,
             });
@@ -353,7 +369,7 @@ function Canvas() {
           setIsDrawing(false);
           setSelectedTool("select");
           isDown = false;
-          shape;
+          // shape;
         };
 
         canvas.on("mouse:down", mouseDownHandler);

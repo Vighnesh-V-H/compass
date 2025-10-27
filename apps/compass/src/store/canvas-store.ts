@@ -23,6 +23,7 @@ interface CanvasStore {
   isDrawing: boolean;
   canvasHistory: CanvasState[];
   historyIndex: number;
+  shouldRestore: boolean;
 
   setZoom: (zoom: number) => void;
   zoomIn: () => void;
@@ -41,6 +42,8 @@ interface CanvasStore {
   redo: () => void;
   canUndo: () => boolean;
   canRedo: () => boolean;
+  getCurrentHistoryState: () => CanvasState | null;
+  clearRestoreFlag: () => void;
 
   resetCanvas: () => void;
 }
@@ -52,6 +55,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   isDrawing: false,
   canvasHistory: [],
   historyIndex: -1,
+  shouldRestore: false,
 
   setZoom: (zoom: number) => set({ zoom }),
   zoomIn: () =>
@@ -74,6 +78,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
         current.historyIndex + 1
       );
       newHistory.push(state);
+      console.log(newHistory);
       return {
         canvasHistory: newHistory,
         historyIndex: newHistory.length - 1,
@@ -82,19 +87,30 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   undo: () =>
     set((state: CanvasStore) => {
       if (state.historyIndex > 0) {
-        return { historyIndex: state.historyIndex - 1 };
+        return { historyIndex: state.historyIndex - 1, shouldRestore: true };
       }
       return state;
     }),
   redo: () =>
     set((state: CanvasStore) => {
       if (state.historyIndex < state.canvasHistory.length - 1) {
-        return { historyIndex: state.historyIndex + 1 };
+        return { historyIndex: state.historyIndex + 1, shouldRestore: true };
       }
       return state;
     }),
   canUndo: () => get().historyIndex > 0,
   canRedo: () => get().historyIndex < get().canvasHistory.length - 1,
+  getCurrentHistoryState: () => {
+    const state = get();
+    if (
+      state.historyIndex >= 0 &&
+      state.historyIndex < state.canvasHistory.length
+    ) {
+      return state.canvasHistory[state.historyIndex];
+    }
+    return null;
+  },
+  clearRestoreFlag: () => set({ shouldRestore: false }),
 
   resetCanvas: () =>
     set({
@@ -104,5 +120,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       isDrawing: false,
       canvasHistory: [],
       historyIndex: -1,
+      shouldRestore: false,
     }),
 }));

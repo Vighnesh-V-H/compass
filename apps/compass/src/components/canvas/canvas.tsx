@@ -46,6 +46,7 @@ function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const textboxRef = useRef<Textbox | null>(null);
+  const isCreatingShapeRef = useRef<boolean>(false);
 
   const [isReady, setIsReady] = useState(false);
 
@@ -58,6 +59,11 @@ function Canvas() {
     addToHistory,
     setSelectedTool,
     setZoom,
+    shouldRestore,
+    getCurrentHistoryState,
+    clearRestoreFlag,
+    undo,
+    redo,
   } = useCanvasStore();
 
   useEffect(() => {
@@ -109,6 +115,49 @@ function Canvas() {
       canvas.requestRenderAll();
     }
   }, [pan, isReady]);
+
+  // Handle undo/redo - restore canvas state from history
+  useEffect(() => {
+    if (!fabricCanvasRef.current || !isReady || !shouldRestore) return;
+
+    const canvas = fabricCanvasRef.current;
+    const historyState = getCurrentHistoryState();
+
+    if (!historyState) {
+      clearRestoreFlag();
+      return;
+    }
+
+    // Temporarily set isDrawing to prevent auto-save during restoration
+    setIsDrawing(true);
+    isCreatingShapeRef.current = true;
+
+    // Clear the canvas
+    canvas.clear();
+    canvas.backgroundColor = "#000";
+
+    if (historyState.elements && Array.isArray(historyState.elements)) {
+      historyState.elements.forEach((obj: unknown) => {
+        if (obj && typeof obj === "object") {
+          canvas.add(obj as FabricObject);
+        }
+      });
+    }
+
+    canvas.requestRenderAll();
+
+    setTimeout(() => {
+      setIsDrawing(false);
+      isCreatingShapeRef.current = false;
+      clearRestoreFlag();
+    }, 50);
+  }, [
+    shouldRestore,
+    isReady,
+    getCurrentHistoryState,
+    clearRestoreFlag,
+    setIsDrawing,
+  ]);
 
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
@@ -286,6 +335,7 @@ function Canvas() {
 
         mouseDownHandler = (o) => {
           if (o.e.shiftKey) return;
+          isCreatingShapeRef.current = true; // Set flag when starting to create shape
           isDown = true;
           const pointer = canvas.getScenePoint(o.e);
           startX = pointer.x;
@@ -393,6 +443,7 @@ function Canvas() {
           setIsDrawing(false);
           setSelectedTool("select");
           isDown = false;
+          isCreatingShapeRef.current = false; // Clear flag when done creating shape
           // shape;
         };
 
@@ -541,7 +592,8 @@ function Canvas() {
 
     const saveState = () => {
       const currentIsDrawing = useCanvasStore.getState().isDrawing;
-      if (currentIsDrawing) return;
+      // Don't save if we're actively drawing OR creating a shape
+      if (currentIsDrawing || isCreatingShapeRef.current) return;
       addToHistory({ elements: canvas.getObjects() });
     };
 
@@ -568,6 +620,26 @@ function Canvas() {
         activeObject.type === "textbox" &&
         (activeObject as Textbox).isEditing
       ) {
+        return;
+      }
+
+      // Undo/Redo keyboard shortcuts
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) {
+          // Ctrl+Shift+Z or Cmd+Shift+Z for redo
+          redo();
+        } else {
+          // Ctrl+Z or Cmd+Z for undo
+          undo();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        // Ctrl+Y or Cmd+Y for redo
+        e.preventDefault();
+        redo();
         return;
       }
 
@@ -619,7 +691,7 @@ function Canvas() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isReady, addToHistory, setSelectedTool]);
+  }, [isReady, addToHistory, setSelectedTool, undo, redo]);
 
   return (
     <div className='w-full overflow-hidden relative'>

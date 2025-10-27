@@ -43,7 +43,7 @@ async function fetchMoodboardImages(
   projectId: string
 ): Promise<MoodboardImage[]> {
   const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}`,
+    `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboar/${projectId}`,
     {
       withCredentials: true,
     }

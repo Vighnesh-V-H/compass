@@ -46,7 +46,7 @@ function Projects() {
     return <Loader />;
   }
 
-  if (!user || !user.emailVerified) {
+  if (!user?.emailVerified) {
     return <div>not verified</div>;
   }
 

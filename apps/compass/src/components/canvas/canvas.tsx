@@ -18,6 +18,30 @@ import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
 import { ChatForm } from "./chat";
 
+function isNested(inner: FabricObject, outer: FabricObject): boolean {
+  const innerRect = inner.getBoundingRect();
+  const outerRect = outer.getBoundingRect();
+
+  return (
+    innerRect.left >= outerRect.left &&
+    innerRect.top >= outerRect.top &&
+    innerRect.left + innerRect.width <= outerRect.left + outerRect.width &&
+    innerRect.top + innerRect.height <= outerRect.top + outerRect.height
+  );
+}
+
+function isIntersecting(a: FabricObject, b: FabricObject): boolean {
+  const r1 = a.getBoundingRect();
+  const r2 = b.getBoundingRect();
+
+  return !(
+    r2.left > r1.left + r1.width ||
+    r2.left + r2.width < r1.left ||
+    r2.top > r1.top + r1.height ||
+    r2.top + r2.height < r1.top
+  );
+}
+
 function Canvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -283,6 +307,7 @@ function Canvas() {
               top: startY,
               width: 0,
               height: 0,
+              fill: "transparent",
             });
           } else if (selectedTool === "frame") {
             shape = new Rect({
@@ -310,7 +335,6 @@ function Canvas() {
               ...commonProps,
               left: startX,
               top: startY,
-
               width: 0,
               height: 0,
             });
@@ -375,6 +399,60 @@ function Canvas() {
         canvas.on("mouse:down", mouseDownHandler);
         canvas.on("mouse:move", mouseMoveHandler);
         canvas.on("mouse:up", mouseUpHandler);
+        canvas.on("object:added", (e) => {
+          const target = e.target as FabricObject;
+          if (!target) return;
+          canvas.setActiveObject(e.target);
+
+          const parentToUnlock: FabricObject[] = [];
+
+          canvas.getObjects().forEach((obj) => {
+            if (obj === target) return;
+
+            if (isNested(target, obj) || isIntersecting(target, obj)) {
+              obj.lockMovementX = true;
+              obj.lockMovementY = true;
+              parentToUnlock.push(obj);
+            }
+          });
+
+          requestAnimationFrame(() => {
+            parentToUnlock.forEach((obj) => {
+              obj.lockMovementX = false;
+              obj.lockMovementY = false;
+            });
+
+            target.lockMovementX = false;
+            target.lockMovementY = false;
+
+            parentToUnlock.forEach((obj) => (obj.selectable = true));
+            target.selectable = true;
+
+            console.log(
+              `Unlocked ${target.type} and ${
+                parentToUnlock.length ? "its parents" : "no parents"
+              }`
+            );
+          });
+        });
+
+        canvas.on("object:modified", (e) => {
+          console.log(e);
+        });
+
+        canvas.on("selection:created", (e) => {
+          const selected = e.selected ?? [];
+
+          for (let i = 0; i < selected.length; i++) {
+            for (let j = 0; j < selected.length; j++) {
+              if (i !== j && isNested(selected[i], selected[j])) {
+                console.log(
+                  `${selected[i].type} is nested inside ${selected[j].type}`
+                );
+              }
+            }
+          }
+        });
         break;
     }
 

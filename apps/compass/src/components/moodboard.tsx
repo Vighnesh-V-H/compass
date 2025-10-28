@@ -8,6 +8,14 @@ import { cn } from "@/lib/utils";
 import { PlusIcon } from "lucide-react";
 import { Button } from "./ui/button";
 import { useParams } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "./ui/dialog";
 
 function Moodboard() {
   const params = useParams();
@@ -16,6 +24,8 @@ function Moodboard() {
     useMoodboard(projectId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
 
   const processFiles = useCallback(
     (files: FileList) => {
@@ -85,6 +95,24 @@ function Moodboard() {
     return rotations[Math.floor(Math.random() * rotations.length)];
   }, []);
 
+  const handleDeleteClick = (key: string) => {
+    setImageToDelete(key);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (imageToDelete) {
+      deleteImage(imageToDelete);
+      setDeleteDialogOpen(false);
+      setImageToDelete(null);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false);
+    setImageToDelete(null);
+  };
+
   return (
     <div
       className={cn(
@@ -137,7 +165,7 @@ function Moodboard() {
               />
             </div>
             <Button
-              onClick={() => deleteImage(image.id)}
+              onClick={() => handleDeleteClick(image.key)}
               disabled={image.isUploading}
               className='absolute top-2 right-2 bg-destructive text-destructive-foreground h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 z-20 flex items-center justify-center text-sm'>
               X
@@ -158,6 +186,26 @@ function Moodboard() {
           <p className='text-sm animate-pulse'>Uploading images...</p>
         </div>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Image</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this image? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant='outline' onClick={cancelDelete}>
+              Cancel
+            </Button>
+            <Button variant='destructive' onClick={confirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

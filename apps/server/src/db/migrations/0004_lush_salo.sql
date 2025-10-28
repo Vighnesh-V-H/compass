@@ -1,0 +1,1 @@
+ALTER TABLE "moodboard" ADD COLUMN "key" text NOT NULL;

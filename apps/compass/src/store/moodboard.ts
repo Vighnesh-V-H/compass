@@ -17,6 +17,7 @@ interface MoodboardImage {
   id: string;
   url: string;
   name: string;
+  key?: string;
   projectId: string;
   isUploaded: boolean;
   isUploading: boolean;
@@ -84,19 +85,16 @@ export const useMoodboardStore = create<MoodboardState>()(
     {
       name: "moodboard-local-state",
       partialize: (state) => ({
-        localImages: state.localImages.filter((img) => !img.isUploading), // Only persist completed
+        localImages: state.localImages.filter((img) => !img.isUploading),
         dragActive: state.dragActive,
       }),
       onRehydrateStorage: () => (state) => {
-        // Cleanup on rehydrate
         if (state) state.revokeTempUrls();
       },
     }
   )
 );
 
-// Custom hook for moodboard data, integrating queries and mutations
-// Usage: const { images, isLoading, isUploading, uploadImage, deleteImage } = useMoodboard(projectId);
 export function useMoodboard(projectId: string) {
   const queryClient = useQueryClientHook();
   const setProjectId = useMoodboardStore((state) => state.setProjectId);
@@ -113,7 +111,6 @@ export function useMoodboard(projectId: string) {
     setProjectId(projectId);
   }, [projectId, setProjectId]);
 
-  // Fetch query
   const {
     data: fetchedImages = [],
     isLoading,
@@ -122,13 +119,15 @@ export function useMoodboard(projectId: string) {
     queryKey: ["moodboard", projectId],
     queryFn: async () => {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}`, // Fixed typo
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}`,
         { withCredentials: true }
       );
+
       return (response.data.images || []).map((img: MoodboardImage) => ({
         id: img.id,
         url: img.url,
         name: img.name,
+        key: img?.key,
         projectId: img.projectId || projectId,
         isUploaded: true,
         isUploading: false,
@@ -148,7 +147,6 @@ export function useMoodboard(projectId: string) {
     }
   }, [error]);
 
-  // Combined images
   const images = useMemo(
     () => [...fetchedImages, ...localImages.filter((img) => img.isUploading)],
     [fetchedImages, localImages]
@@ -225,14 +223,14 @@ export function useMoodboard(projectId: string) {
   );
 
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (key: string) => {
       queryClient.setQueryData<MoodboardImage[]>(
         ["moodboard", projectId],
-        (old) => (old ? old.filter((img) => img.id !== id) : [])
+        (old) => (old ? old.filter((img) => img.key !== key) : [])
       );
 
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}/images/${id}`,
+        `${process.env.NEXT_PUBLIC_SERVER_URL}/api/moodboard/${projectId}/images/${key}`,
         {
           withCredentials: true,
           headers: { Authorization: `Bearer ${bearerToken}` },
@@ -255,8 +253,8 @@ export function useMoodboard(projectId: string) {
   });
 
   const deleteImage = useCallback(
-    (id: string) => {
-      deleteMutation.mutate(id);
+    (key: string) => {
+      deleteMutation.mutate(key);
     },
     [deleteMutation]
   );

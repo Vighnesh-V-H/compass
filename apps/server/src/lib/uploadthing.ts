@@ -31,15 +31,14 @@ export const uploadRouter = {
       };
     })
     .onUploadError(async (e) => {
-      console.log("\n\n\n", "Erororo");
+   
       console.log(e.error);
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("\n\n\n hello");
-      console.log(metadata);
+
+   
       const { projectId, userId } = metadata;
-      console.log("\n\n\n");
-      console.log(projectId, userId);
+
 
       try {
         if (!userId) {
@@ -49,6 +48,7 @@ export const uploadRouter = {
           projectId,
           url: file.ufsUrl,
           name: file.name,
+          key: file.key,
           userId,
         });
 

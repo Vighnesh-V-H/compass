@@ -4,32 +4,39 @@ import { useMoodboard } from "@/hooks/use-moodboard";
 import { toast } from "sonner";
 import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
-import { cn } from "@/lib/utils"; // Assuming you have a utility for class concatenation
+import { cn } from "@/lib/utils";
 import { PlusIcon } from "lucide-react";
 import { Button } from "./ui/button";
+import { useParams } from "next/navigation";
 
 function Moodboard() {
-  const { images, deleteImage, isUploading, uploadImage } = useMoodboard();
+  const params = useParams();
+  const projectId = params.projectid as string;
+  const { images, deleteImage, isUploading, uploadImage } =
+    useMoodboard(projectId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
-  const processFiles = (files: FileList) => {
-    Array.from(files).forEach((file) => {
-      if (file.type.startsWith("image/")) {
-        uploadImage(file);
-      } else {
-        toast.error(`${file.name} is not an image`);
-      }
-    });
-  };
+  const processFiles = useCallback(
+    (files: FileList) => {
+      Array.from(files).forEach((file) => {
+        if (file.type.startsWith("image/")) {
+          uploadImage(file);
+        } else {
+          toast.error(`${file.name} is not an image`);
+        }
+      });
+    },
+    [uploadImage]
+  );
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       if (!e.target.files) return;
       processFiles(e.target.files);
-      e.target.value = ""; // Reset input
+      e.target.value = "";
     },
-    [uploadImage]
+    [processFiles]
   );
 
   const handleDrop = useCallback(
@@ -37,22 +44,30 @@ function Moodboard() {
       e.preventDefault();
       e.stopPropagation();
       setIsDraggingOver(false);
+
+      if (!e.dataTransfer.types.includes("Files")) return;
+
       if (e.dataTransfer.files?.length) {
         processFiles(e.dataTransfer.files);
       }
     },
-    [uploadImage]
+    [processFiles]
   );
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDraggingOver(true);
+    }
   }, []);
 
   const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDraggingOver(true);
+    if (e.dataTransfer.types.includes("Files")) {
+      setIsDraggingOver(true);
+    }
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -117,13 +132,9 @@ function Moodboard() {
                 priority
                 fill
                 sizes='(max-width: 768px) 100vw, 300px'
-                className='object-cover'
+                className='object-cover select-none pointer-events-none'
+                draggable={false}
               />
-              {image.isUploading && (
-                <div className='absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg'>
-                  <div className='text-white text-sm'>Uploading...</div>
-                </div>
-              )}
             </div>
             <Button
               onClick={() => deleteImage(image.id)}

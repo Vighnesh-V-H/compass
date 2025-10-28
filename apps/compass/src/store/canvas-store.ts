@@ -1,7 +1,9 @@
 import { create } from "zustand";
+import { debounce } from "lodash";
+import { setToLocalStorage, getFromLocalStorage } from "@/lib/localstorage";
 
 interface CanvasState {
-  elements: unknown[];
+  canvasJSON: string; // Serialized canvas state from Fabric's toJSON()
 }
 
 export type ToolType =
@@ -46,7 +48,23 @@ interface CanvasStore {
   clearRestoreFlag: () => void;
 
   resetCanvas: () => void;
+  saveToStorage: () => void;
+  loadFromStorage: () => void;
 }
+
+const CANVAS_STORAGE_KEY = "canvas-state";
+const DEBOUNCE_DELAY = 500;
+
+const debouncedSave = debounce((state: Partial<CanvasStore>) => {
+  const dataToSave = {
+    zoom: state.zoom,
+    pan: state.pan,
+    canvasHistory: state.canvasHistory,
+    historyIndex: state.historyIndex,
+  };
+  setToLocalStorage(CANVAS_STORAGE_KEY, dataToSave);
+  console.log("Canvas state saved to localStorage");
+}, DEBOUNCE_DELAY);
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
   zoom: 1,
@@ -57,15 +75,35 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   historyIndex: -1,
   shouldRestore: false,
 
-  setZoom: (zoom: number) => set({ zoom }),
+  setZoom: (zoom: number) => {
+    set({ zoom });
+    debouncedSave(get());
+  },
   zoomIn: () =>
-    set((state: CanvasStore) => ({ zoom: Math.min(state.zoom + 0.1, 3) })),
+    set((state: CanvasStore) => {
+      const newZoom = Math.min(state.zoom + 0.1, 3);
+      debouncedSave({ ...state, zoom: newZoom });
+      return { zoom: newZoom };
+    }),
   zoomOut: () =>
-    set((state: CanvasStore) => ({ zoom: Math.max(state.zoom - 0.1, 0.1) })),
-  resetZoom: () => set({ zoom: 1 }),
+    set((state: CanvasStore) => {
+      const newZoom = Math.max(state.zoom - 0.1, 0.1);
+      debouncedSave({ ...state, zoom: newZoom });
+      return { zoom: newZoom };
+    }),
+  resetZoom: () => {
+    set({ zoom: 1 });
+    debouncedSave(get());
+  },
 
-  setPan: (pan: { x: number; y: number }) => set({ pan }),
-  resetPan: () => set({ pan: { x: 0, y: 0 } }),
+  setPan: (pan: { x: number; y: number }) => {
+    set({ pan });
+    debouncedSave(get());
+  },
+  resetPan: () => {
+    set({ pan: { x: 0, y: 0 } });
+    debouncedSave(get());
+  },
 
   setSelectedTool: (tool: ToolType) => set({ selectedTool: tool }),
 
@@ -79,22 +117,34 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       );
       newHistory.push(state);
       console.log(newHistory);
-      return {
+      const newState = {
         canvasHistory: newHistory,
         historyIndex: newHistory.length - 1,
       };
+      debouncedSave({ ...current, ...newState });
+      return newState;
     }),
   undo: () =>
     set((state: CanvasStore) => {
       if (state.historyIndex > 0) {
-        return { historyIndex: state.historyIndex - 1, shouldRestore: true };
+        const newState = {
+          historyIndex: state.historyIndex - 1,
+          shouldRestore: true,
+        };
+        debouncedSave({ ...state, ...newState });
+        return newState;
       }
       return state;
     }),
   redo: () =>
     set((state: CanvasStore) => {
       if (state.historyIndex < state.canvasHistory.length - 1) {
-        return { historyIndex: state.historyIndex + 1, shouldRestore: true };
+        const newState = {
+          historyIndex: state.historyIndex + 1,
+          shouldRestore: true,
+        };
+        debouncedSave({ ...state, ...newState });
+        return newState;
       }
       return state;
     }),
@@ -112,7 +162,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
   clearRestoreFlag: () => set({ shouldRestore: false }),
 
-  resetCanvas: () =>
+  resetCanvas: () => {
     set({
       zoom: 1,
       pan: { x: 0, y: 0 },
@@ -121,5 +171,40 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       canvasHistory: [],
       historyIndex: -1,
       shouldRestore: false,
-    }),
+    });
+    debouncedSave(get());
+  },
+
+  saveToStorage: () => {
+    const state = get();
+    const dataToSave = {
+      zoom: state.zoom,
+      pan: state.pan,
+      canvasHistory: state.canvasHistory,
+      historyIndex: state.historyIndex,
+    };
+    setToLocalStorage(CANVAS_STORAGE_KEY, dataToSave);
+    console.log("Canvas state saved to localStorage (immediate)");
+  },
+
+  loadFromStorage: () => {
+    const savedState = getFromLocalStorage<{
+      zoom: number;
+      pan: { x: number; y: number };
+      canvasHistory: CanvasState[];
+      historyIndex: number;
+    }>(CANVAS_STORAGE_KEY);
+
+    if (savedState) {
+      set({
+        zoom: savedState.zoom ?? 1,
+        pan: savedState.pan ?? { x: 0, y: 0 },
+        canvasHistory: savedState.canvasHistory ?? [],
+        historyIndex: savedState.historyIndex ?? -1,
+        shouldRestore:
+          savedState.canvasHistory && savedState.canvasHistory.length > 0,
+      });
+      console.log("Canvas state loaded from localStorage");
+    }
+  },
 }));

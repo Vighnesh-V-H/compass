@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   Canvas as FabricCanvas,
   Circle,
@@ -64,7 +64,22 @@ function Canvas() {
     clearRestoreFlag,
     undo,
     redo,
+    loadFromStorage,
   } = useCanvasStore();
+
+  // Helper function to save canvas state to history
+  const saveCanvasState = useCallback(
+    (canvas: FabricCanvas) => {
+      const canvasJSON = JSON.stringify(canvas.toJSON());
+      addToHistory({ canvasJSON });
+    },
+    [addToHistory]
+  );
+
+  // Load canvas state from localStorage on mount
+  useEffect(() => {
+    loadFromStorage();
+  }, [loadFromStorage]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -123,7 +138,7 @@ function Canvas() {
     const canvas = fabricCanvasRef.current;
     const historyState = getCurrentHistoryState();
 
-    if (!historyState) {
+    if (!historyState || !historyState.canvasJSON) {
       clearRestoreFlag();
       return;
     }
@@ -132,25 +147,25 @@ function Canvas() {
     setIsDrawing(true);
     isCreatingShapeRef.current = true;
 
-    // Clear the canvas
-    canvas.clear();
-    canvas.backgroundColor = "#000";
+    // Parse the JSON and restore the canvas
+    try {
+      const canvasData = JSON.parse(historyState.canvasJSON);
+      canvas.loadFromJSON(canvasData, () => {
+        canvas.backgroundColor = "#000";
+        canvas.requestRenderAll();
 
-    if (historyState.elements && Array.isArray(historyState.elements)) {
-      historyState.elements.forEach((obj: unknown) => {
-        if (obj && typeof obj === "object") {
-          canvas.add(obj as FabricObject);
-        }
+        setTimeout(() => {
+          setIsDrawing(false);
+          isCreatingShapeRef.current = false;
+          clearRestoreFlag();
+        }, 50);
       });
-    }
-
-    canvas.requestRenderAll();
-
-    setTimeout(() => {
+    } catch (error) {
+      console.error("Error restoring canvas:", error);
       setIsDrawing(false);
       isCreatingShapeRef.current = false;
       clearRestoreFlag();
-    }, 50);
+    }
   }, [
     shouldRestore,
     isReady,
@@ -259,7 +274,7 @@ function Canvas() {
 
         mouseUpHandler = () => {
           if (isErasing) {
-            addToHistory({ elements: canvas.getObjects() });
+            saveCanvasState(canvas);
           }
 
           setIsDrawing(false);
@@ -305,7 +320,7 @@ function Canvas() {
               canvas.requestRenderAll();
               textboxRef.current = null;
             } else {
-              addToHistory({ elements: canvas.getObjects() });
+              saveCanvasState(canvas);
             }
           });
 
@@ -335,7 +350,7 @@ function Canvas() {
 
         mouseDownHandler = (o) => {
           if (o.e.shiftKey) return;
-          isCreatingShapeRef.current = true; // Set flag when starting to create shape
+          isCreatingShapeRef.current = true;
           isDown = true;
           const pointer = canvas.getScenePoint(o.e);
           startX = pointer.x;
@@ -430,7 +445,7 @@ function Canvas() {
 
         mouseUpHandler = () => {
           if (isDown && shape) {
-            addToHistory({ elements: canvas.getObjects() });
+            saveCanvasState(canvas);
           }
           const tb = textboxRef.current;
           if (tb && !tb.isEditing && (!tb.text || tb.text.trim() === "")) {
@@ -514,7 +529,7 @@ function Canvas() {
       if (mouseMoveHandler) canvas.off("mouse:move", mouseMoveHandler);
       if (mouseUpHandler) canvas.off("mouse:up", mouseUpHandler);
     };
-  }, [selectedTool, isReady, setIsDrawing, addToHistory, setSelectedTool]);
+  }, [selectedTool, isReady, setIsDrawing, setSelectedTool, saveCanvasState]);
 
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
@@ -592,9 +607,8 @@ function Canvas() {
 
     const saveState = () => {
       const currentIsDrawing = useCanvasStore.getState().isDrawing;
-      // Don't save if we're actively drawing OR creating a shape
       if (currentIsDrawing || isCreatingShapeRef.current) return;
-      addToHistory({ elements: canvas.getObjects() });
+      saveCanvasState(canvas);
     };
 
     canvas.on("object:added", saveState);
@@ -606,7 +620,7 @@ function Canvas() {
       canvas.off("object:modified", saveState);
       canvas.off("object:removed", saveState);
     };
-  }, [isReady, addToHistory]);
+  }, [isReady, saveCanvasState]);
 
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady) return;
@@ -623,21 +637,17 @@ function Canvas() {
         return;
       }
 
-      // Undo/Redo keyboard shortcuts
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
         e.preventDefault();
         if (e.shiftKey) {
-          // Ctrl+Shift+Z or Cmd+Shift+Z for redo
           redo();
         } else {
-          // Ctrl+Z or Cmd+Z for undo
           undo();
         }
         return;
       }
 
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
-        // Ctrl+Y or Cmd+Y for redo
         e.preventDefault();
         redo();
         return;
@@ -649,7 +659,7 @@ function Canvas() {
           activeObjects.forEach((obj) => canvas.remove(obj));
           canvas.discardActiveObject();
           canvas.requestRenderAll();
-          addToHistory({ elements: canvas.getObjects() });
+          saveCanvasState(canvas);
         }
         return;
       }
@@ -691,7 +701,7 @@ function Canvas() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isReady, addToHistory, setSelectedTool, undo, redo]);
+  }, [isReady, setSelectedTool, undo, redo, saveCanvasState]);
 
   return (
     <div className='w-full overflow-hidden relative'>

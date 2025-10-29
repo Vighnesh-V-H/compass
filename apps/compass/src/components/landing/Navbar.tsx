@@ -33,7 +33,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
       <div
         className={`mx-auto transition-all duration-300 ${
           isScrolled
-            ? "max-w-6xl px-4 sm:px-6 lg:px-8 bg-black/70 backdrop-blur-xl border border-white/20 rounded-2xl shadow-2xl shadow-white/5"
+            ? "max-w-6xl px-4 sm:px-6 lg:px-8 bg-white/70 dark:bg-black/70 backdrop-blur-xl border border-gray-200 dark:border-white/10 rounded-2xl shadow-lg dark:shadow-white/5"
             : "max-w-7xl px-4 sm:px-6 lg:px-8 bg-transparent"
         }`}>
         <div
@@ -45,10 +45,13 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             className='flex items-center space-x-2'
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}>
-            <svg className='w-8 h-8' viewBox='0 0 40 40' fill='none'>
+            <svg
+              className='w-8 h-8 text-gray-900 dark:text-white'
+              viewBox='0 0 40 40'
+              fill='none'>
               <motion.path
                 d='M20 5L35 15V25L20 35L5 25V15L20 5Z'
-                stroke='white'
+                stroke='currentColor'
                 strokeWidth='2'
                 fill='none'
                 initial={{ pathLength: 0 }}
@@ -59,13 +62,15 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                 cx='20'
                 cy='20'
                 r='5'
-                fill='white'
+                fill='currentColor'
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.5, duration: 0.5 }}
               />
             </svg>
-            <span className='text-xl font-bold text-white'>Compass</span>
+            <span className='text-xl font-bold text-gray-900 dark:text-white'>
+              Compass
+            </span>
           </motion.a>
 
           <div className='hidden md:flex items-center space-x-8'>
@@ -73,9 +78,9 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               <a
                 key={link.name}
                 href={link.href}
-                className='text-gray-300 hover:text-white transition-colors relative group'>
+                className='text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors relative group'>
                 {link.name}
-                <span className='absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full' />
+                <span className='absolute bottom-0 left-0 w-0 h-0.5 bg-gray-900 dark:bg-white transition-all group-hover:w-full' />
               </a>
             ))}
           </div>
@@ -84,7 +89,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             {isLoggedIn ? (
               <motion.a
                 href='/projects'
-                className='px-6 py-2 bg-white text-black rounded-full font-medium hover:bg-gray-200 transition-colors'
+                className='px-6 py-2 rounded-full font-medium bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100 transition-colors'
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}>
                 Projects
@@ -93,14 +98,14 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
               <>
                 <motion.a
                   href='/auth/signin'
-                  className='text-gray-300 hover:text-white transition-colors'
+                  className='text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors'
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}>
                   Sign In
                 </motion.a>
                 <motion.a
                   href='/auth/signup'
-                  className='px-6 py-2 bg-white text-black rounded-full font-medium hover:bg-gray-200 transition-colors'
+                  className='px-6 py-2 rounded-full font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:opacity-90 transition-colors'
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}>
                   Sign Up
@@ -110,7 +115,7 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
           </div>
 
           <button
-            className='md:hidden text-white'
+            className='md:hidden text-gray-900 dark:text-white'
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             <svg
               className='w-6 h-6'
@@ -143,13 +148,13 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className='md:hidden bg-black border-t border-white/10'>
+            className='md:hidden bg-white dark:bg-black border-t border-gray-200 dark:border-white/10'>
             <div className='px-4 py-4 space-y-4'>
               {NAVBAR_LINKS.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
-                  className='block text-gray-300 hover:text-white transition-colors'
+                  className='block text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors'
                   onClick={() => setIsMobileMenuOpen(false)}>
                   {link.name}
                 </a>
@@ -158,19 +163,19 @@ export default function Navbar({ isLoggedIn = false }: NavbarProps) {
                 {isLoggedIn ? (
                   <a
                     href='/projects'
-                    className='block px-6 py-2 bg-white text-black rounded-full text-center font-medium'>
+                    className='block px-6 py-2 bg-gray-900 text-white dark:bg-white dark:text-black rounded-full text-center font-medium'>
                     Projects
                   </a>
                 ) : (
                   <>
                     <a
                       href='/auth/signin'
-                      className='block px-6 py-2 text-center text-gray-300 hover:text-white'>
+                      className='block px-6 py-2 text-center text-gray-900 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'>
                       Sign In
                     </a>
                     <a
                       href='/auth/signup'
-                      className='block px-6 py-2 bg-white text-black rounded-full text-center font-medium'>
+                      className='block px-6 py-2 text-white bg-gradient-to-r from-teal-600 to-emerald-600 rounded-full text-center font-medium'>
                       Sign Up
                     </a>
                   </>

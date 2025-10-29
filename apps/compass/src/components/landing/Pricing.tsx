@@ -11,7 +11,9 @@ export default function Pricing() {
   });
 
   return (
-    <section id='pricing' className='py-24 bg-black relative overflow-hidden'>
+    <section
+      id='pricing'
+      className='py-24 bg-gray-50 dark:bg-black relative overflow-hidden'>
       <div
         className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10'
         ref={ref}>
@@ -20,10 +22,11 @@ export default function Pricing() {
           initial={{ opacity: 0, y: 30 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8 }}>
-          <h2 className='text-4xl sm:text-5xl font-bold text-white mb-4'>
+          <h2 className='text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-3'>
             Simple, Transparent Pricing
           </h2>
-          <p className='text-xl text-gray-400 max-w-2xl mx-auto'>
+          <div className='mx-auto mb-4 h-1 w-16 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500' />
+          <p className='text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto'>
             Choose the plan that fits your needs
           </p>
         </motion.div>
@@ -32,60 +35,47 @@ export default function Pricing() {
           {PRICING_PLANS.map((plan, index) => (
             <motion.div
               key={index}
-              className={`relative ${plan.popular ? "md:-mt-4" : ""}`}
+              className='relative h-full'
               initial={{ opacity: 0, y: 50 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ delay: index * 0.2, duration: 0.8 }}
-              whileHover={{ scale: 1.05, y: -10 }}>
+              whileHover={{ scale: 1.02 }}>
               {plan.popular && (
                 <motion.div
-                  className='absolute -top-5 left-0 right-0 text-center'
+                  className='absolute z-80 -top-5 left-0 right-0 text-center'
                   initial={{ opacity: 0, y: -10 }}
                   animate={inView ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: 0.5, duration: 0.5 }}>
-                  <span className='bg-white text-black px-4 py-1 rounded-full text-sm font-semibold'>
+                  <span className='bg-gray-900 text-white dark:bg-white z-50 dark:text-black px-4 py-1 rounded-full text-sm font-semibold'>
                     Most Popular
                   </span>
                 </motion.div>
               )}
 
               <div
-                className={`relative p-8 rounded-2xl backdrop-blur-sm overflow-hidden ${
+                className={`relative h-full flex flex-col p-8 rounded-2xl backdrop-blur-sm overflow-hidden ${
                   plan.popular
-                    ? "bg-white/10 border-2 border-white"
-                    : "bg-white/5 border border-white/10"
+                    ? "bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 ring-2 ring-teal-500/20 dark:ring-teal-400/20"
+                    : "bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10"
                 }`}>
-                {/* Background Animation */}
-                {plan.popular && (
-                  <motion.div
-                    className='absolute inset-0 bg-gradient-to-br from-white/20 to-transparent'
-                    animate={{
-                      backgroundPosition: ["0% 0%", "100% 100%"],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      repeatType: "reverse",
-                    }}
-                  />
-                )}
-
-                <div className='relative z-10'>
-                  <h3 className='text-2xl font-bold text-white mb-2'>
+                <div className='relative z-10 flex flex-col h-full'>
+                  <h3 className='text-2xl font-bold text-gray-900 dark:text-white mb-2'>
                     {plan.name}
                   </h3>
                   <div className='mb-6'>
-                    <span className='text-5xl font-bold text-white'>
+                    <span className='text-5xl font-bold text-gray-900 dark:text-white'>
                       {plan.price}
                     </span>
-                    <span className='text-gray-400 ml-2'>/ {plan.period}</span>
+                    <span className='text-gray-600 dark:text-gray-400 ml-2'>
+                      / {plan.period}
+                    </span>
                   </div>
 
                   <ul className='space-y-4 mb-8'>
                     {plan.features.map((feature, i) => (
                       <motion.li
                         key={i}
-                        className='flex items-start text-gray-300'
+                        className='flex items-start text-gray-700 dark:text-gray-300'
                         initial={{ opacity: 0, x: -20 }}
                         animate={inView ? { opacity: 1, x: 0 } : {}}
                         transition={{
@@ -93,7 +83,7 @@ export default function Pricing() {
                           duration: 0.5,
                         }}>
                         <svg
-                          className='w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0'
+                          className='w-5 h-5 text-teal-600 dark:text-teal-400 mr-3 mt-0.5 flex-shrink-0'
                           fill='none'
                           stroke='currentColor'
                           viewBox='0 0 24 24'>
@@ -116,10 +106,10 @@ export default function Pricing() {
                   </ul>
 
                   <motion.button
-                    className={`w-full py-3 rounded-full font-semibold transition-colors ${
+                    className={`mt-auto w-full py-3 rounded-full font-semibold transition-colors ${
                       plan.popular
-                        ? "bg-white text-black hover:bg-gray-200"
-                        : "bg-white/10 text-white border border-white/30 hover:bg-white/20"
+                        ? "bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-100"
+                        : "border border-gray-300 dark:border-white/30 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10"
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}>

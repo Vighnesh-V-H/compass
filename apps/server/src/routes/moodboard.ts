@@ -1,23 +1,18 @@
 import { Hono } from "hono";
-import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { moodboard, project } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
+import { authMiddleware } from "@/middleware/auth";
+import type { AuthEnv } from "@/lib/types";
 
-const router = new Hono();
+const router = new Hono<AuthEnv>();
+router.use("/*", authMiddleware);
 const utapi = new UTApi();
 
 router.get("/moodboard/:projectId", async (c) => {
   try {
-    const session = await auth.api.getSession({
-      headers: new Headers(Object.entries(c.req.header())),
-    });
-
-    if (!session?.user) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-
+    const user = c.get("user");
     const projectId = c.req.param("projectId");
 
     if (!projectId) {
@@ -34,7 +29,7 @@ router.get("/moodboard/:projectId", async (c) => {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    if (existingProject[0].userId !== session.user.id) {
+    if (existingProject[0].userId !== user.id) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
@@ -52,14 +47,7 @@ router.get("/moodboard/:projectId", async (c) => {
 
 router.delete("/moodboard/:projectId/images/:key", async (c) => {
   try {
-    const session = await auth.api.getSession({
-      headers: new Headers(Object.entries(c.req.header())),
-    });
-
-    if (!session?.user) {
-      return c.json({ error: "Unauthorized" }, 401);
-    }
-
+    const user = c.get("user");
     const { projectId, key: imageKey } = c.req.param();
 
     console.log(projectId, imageKey);
@@ -68,7 +56,6 @@ router.delete("/moodboard/:projectId/images/:key", async (c) => {
       return c.json({ error: "Project ID and Image key are required" }, 400);
     }
 
-    // Verify project ownership
     const existingProject = await db
       .select()
       .from(project)
@@ -79,11 +66,10 @@ router.delete("/moodboard/:projectId/images/:key", async (c) => {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    if (existingProject[0].userId !== session.user.id) {
+    if (existingProject[0].userId !== user.id) {
       return c.json({ error: "Forbidden" }, 403);
     }
 
-    // Get the image by key to verify ownership
     const imageToDelete = await db
       .select()
       .from(moodboard)
@@ -91,7 +77,7 @@ router.delete("/moodboard/:projectId/images/:key", async (c) => {
         and(
           eq(moodboard.key, imageKey),
           eq(moodboard.projectId, projectId),
-          eq(moodboard.userId, session.user.id)
+          eq(moodboard.userId, user.id)
         )
       )
       .limit(1);
@@ -100,22 +86,19 @@ router.delete("/moodboard/:projectId/images/:key", async (c) => {
       return c.json({ error: "Image not found" }, 404);
     }
 
-    // Delete from UploadThing first using the key
     try {
       await utapi.deleteFiles(imageKey);
     } catch (uploadThingError) {
       console.error("Failed to delete from UploadThing:", uploadThingError);
-      // Continue with database deletion even if UploadThing deletion fails
     }
 
-    // Delete from database using the key
     await db
       .delete(moodboard)
       .where(
         and(
           eq(moodboard.key, imageKey),
           eq(moodboard.projectId, projectId),
-          eq(moodboard.userId, session.user.id)
+          eq(moodboard.userId, user.id)
         )
       );
 

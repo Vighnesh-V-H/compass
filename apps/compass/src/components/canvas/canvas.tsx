@@ -6,6 +6,7 @@ import {
   Circle,
   Rect,
   Triangle,
+  Line,
   PencilBrush,
   Point,
   Textbox,
@@ -16,7 +17,9 @@ import {
 } from "fabric";
 import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
-import { ChatForm } from "./chat";
+import { ChatForm, ChatFormRef } from "./chat";
+import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
 
 function isNested(inner: FabricObject, outer: FabricObject): boolean {
   const innerRect = inner.getBoundingRect();
@@ -47,6 +50,7 @@ function Canvas() {
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const textboxRef = useRef<Textbox | null>(null);
   const isCreatingShapeRef = useRef<boolean>(false);
+  const chatFormRef = useRef<ChatFormRef>(null);
 
   const [isReady, setIsReady] = useState(false);
 
@@ -67,7 +71,6 @@ function Canvas() {
     loadFromStorage,
   } = useCanvasStore();
 
-  // Helper function to save canvas state to history
   const saveCanvasState = useCallback(
     (canvas: FabricCanvas) => {
       const canvasJSON = JSON.stringify(canvas.toJSON());
@@ -76,7 +79,24 @@ function Canvas() {
     [addToHistory]
   );
 
-  // Load canvas state from localStorage on mount
+  const handleGenerateImage = useCallback(() => {
+    if (!fabricCanvasRef.current || !chatFormRef.current) return;
+
+    const canvas = fabricCanvasRef.current;
+
+    const dataURL = canvas.toDataURL({
+      format: "png",
+      quality: 1,
+      multiplier: 2,
+    });
+
+    // Add the image to the chat form
+    chatFormRef.current.addImage(dataURL);
+
+    // Focus the input field
+    chatFormRef.current.focusInput();
+  }, []);
+
   useEffect(() => {
     loadFromStorage();
   }, [loadFromStorage]);
@@ -131,7 +151,6 @@ function Canvas() {
     }
   }, [pan, isReady]);
 
-  // Handle undo/redo - restore canvas state from history
   useEffect(() => {
     if (!fabricCanvasRef.current || !isReady || !shouldRestore) return;
 
@@ -143,11 +162,9 @@ function Canvas() {
       return;
     }
 
-    // Temporarily set isDrawing to prevent auto-save during restoration
     setIsDrawing(true);
     isCreatingShapeRef.current = true;
 
-    // Parse the JSON and restore the canvas
     try {
       const canvasData = JSON.parse(historyState.canvasJSON);
       canvas.loadFromJSON(canvasData, () => {
@@ -336,6 +353,62 @@ function Canvas() {
         canvas.on("mouse:up", mouseUpHandler);
         break;
 
+      case "line":
+        canvas.defaultCursor = "crosshair";
+        canvas.selection = false;
+
+        let isDrawingLine = false;
+        let line: Line;
+        let lineStartX = 0;
+        let lineStartY = 0;
+
+        mouseDownHandler = (o) => {
+          if (o.e.shiftKey) return;
+          isCreatingShapeRef.current = true;
+          isDrawingLine = true;
+          const pointer = canvas.getScenePoint(o.e);
+          lineStartX = pointer.x;
+          lineStartY = pointer.y;
+
+          line = new Line([lineStartX, lineStartY, lineStartX, lineStartY], {
+            stroke: "#3b82f6",
+            strokeWidth: 2,
+            selectable: true,
+            evented: true,
+          });
+
+          canvas.add(line);
+          setIsDrawing(true);
+        };
+
+        mouseMoveHandler = (o) => {
+          if (!isDrawingLine || !line) return;
+
+          const pointer = canvas.getScenePoint(o.e);
+          line.set({
+            x2: pointer.x,
+            y2: pointer.y,
+          });
+
+          line.setCoords();
+          canvas.requestRenderAll();
+        };
+
+        mouseUpHandler = () => {
+          if (isDrawingLine && line) {
+            saveCanvasState(canvas);
+          }
+          setIsDrawing(false);
+          setSelectedTool("select");
+          isDrawingLine = false;
+          isCreatingShapeRef.current = false;
+        };
+
+        canvas.on("mouse:down", mouseDownHandler);
+        canvas.on("mouse:move", mouseMoveHandler);
+        canvas.on("mouse:up", mouseUpHandler);
+        break;
+
       case "rectangle":
       case "circle":
       case "triangle":
@@ -386,6 +459,8 @@ function Canvas() {
               backgroundColor: "#0f0f0f",
               strokeWidth: 1,
               evented: false,
+              lockMovementX: true,
+              lockMovementY: true,
               lockRotation: true,
             });
           } else if (selectedTool === "circle") {
@@ -468,7 +543,7 @@ function Canvas() {
         canvas.on("object:added", (e) => {
           const target = e.target as FabricObject;
           if (!target) return;
-          canvas.setActiveObject(e.target);
+          // canvas.setActiveObject(e.target);
 
           const parentToUnlock: FabricObject[] = [];
 
@@ -493,12 +568,6 @@ function Canvas() {
 
             parentToUnlock.forEach((obj) => (obj.selectable = true));
             target.selectable = true;
-
-            console.log(
-              `Unlocked ${target.type} and ${
-                parentToUnlock.length ? "its parents" : "no parents"
-              }`
-            );
           });
         });
 
@@ -572,7 +641,7 @@ function Canvas() {
     const endPan = () => {
       if (isPanning) {
         isPanning = false;
-        const shapeTools = ["rectangle", "circle", "triangle", "frame"];
+        const shapeTools = ["rectangle", "circle", "triangle", "line", "frame"];
         const isShapeTool = shapeTools.includes(selectedTool || "");
         canvas.defaultCursor =
           selectedTool === "hand"
@@ -677,6 +746,9 @@ function Canvas() {
         case "t":
           setSelectedTool("triangle");
           break;
+        case "l":
+          setSelectedTool("line");
+          break;
         case "p":
         case "b":
           setSelectedTool("draw");
@@ -705,8 +777,15 @@ function Canvas() {
 
   return (
     <div className='w-full overflow-hidden relative'>
+      <Button
+        onClick={handleGenerateImage}
+        className='absolute top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2'
+        variant='default'>
+        <Download className='w-4 h-4' />
+        Generate
+      </Button>
       <canvas ref={canvasRef} />
-      <ChatForm />
+      <ChatForm ref={chatFormRef} />
       <CanvasToolbar />
     </div>
   );

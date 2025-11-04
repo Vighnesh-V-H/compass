@@ -8,14 +8,35 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Plus, ImageIcon, Loader2, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { FileUIPart, TextStreamChatTransport } from "ai";
 
-export function ChatForm() {
+export interface ChatFormRef {
+  addImage: (imageDataUrl: string) => void;
+  focusInput: () => void;
+}
+
+export const ChatForm = forwardRef<ChatFormRef>((props, ref) => {
   const [input, setInput] = useState("");
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useImperativeHandle(ref, () => ({
+    addImage: (imageDataUrl: string) => {
+      setSelectedImages((prev) => [...prev, imageDataUrl]);
+    },
+    focusInput: () => {
+      inputRef.current?.focus();
+    },
+  }));
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new TextStreamChatTransport({
@@ -82,7 +103,7 @@ export function ChatForm() {
   };
 
   return (
-    <div className='w-60  bg-card border-r border-border flex flex-col fixed left-0 top-40'>
+    <div className='w-60  bg-card border-r border-border flex flex-col fixed left-0 top-30'>
       <div className='p-4 border-b border-border'>
         <Button
           onClick={startNewChat}
@@ -154,6 +175,7 @@ export function ChatForm() {
         <form onSubmit={handleFormSubmit} className='flex gap-2'>
           <div className='flex-1 flex gap-2'>
             <Input
+              ref={inputRef}
               type='text'
               placeholder='Message...'
               value={input}
@@ -196,4 +218,6 @@ export function ChatForm() {
       </div>
     </div>
   );
-}
+});
+
+ChatForm.displayName = "ChatForm";

@@ -11,6 +11,7 @@ export type ToolType =
   | "rectangle"
   | "circle"
   | "triangle"
+  | "line"
   | "draw"
   | "eraser"
   | "frame"

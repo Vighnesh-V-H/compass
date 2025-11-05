@@ -20,6 +20,10 @@ import { useCanvasStore } from "@/store/canvas-store";
 import { ChatForm, ChatFormRef } from "./chat";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
+import { useParams } from "next/navigation";
+import { useCanvasSync } from "@/hooks/use-canvas-sync";
+import type { CanvasStateData } from "@/lib/canvas-api";
+import { SaveIndicator } from "./save-indicator";
 
 function isNested(inner: FabricObject, outer: FabricObject): boolean {
   const innerRect = inner.getBoundingRect();
@@ -46,6 +50,9 @@ function isIntersecting(a: FabricObject, b: FabricObject): boolean {
 }
 
 function Canvas() {
+  const params = useParams();
+  const projectId = params.projectid as string;
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const textboxRef = useRef<Textbox | null>(null);
@@ -53,6 +60,7 @@ function Canvas() {
   const chatFormRef = useRef<ChatFormRef>(null);
 
   const [isReady, setIsReady] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const {
     selectedTool,
@@ -69,14 +77,29 @@ function Canvas() {
     undo,
     redo,
     loadFromStorage,
+    setProjectId,
+    loadFromServer,
   } = useCanvasStore();
+
+  const {
+    canvasData,
+    saveCanvasState: saveToServer,
+    isSaving,
+  } = useCanvasSync(projectId);
 
   const saveCanvasState = useCallback(
     (canvas: FabricCanvas) => {
       const canvasJSON = JSON.stringify(canvas.toJSON());
       addToHistory({ canvasJSON });
+      const canvasStateData: CanvasStateData = {
+        elements: canvas.toJSON().objects,
+        zoom,
+        pan,
+        timestamp: Date.now(),
+      };
+      saveToServer(canvasStateData);
     },
-    [addToHistory]
+    [addToHistory, zoom, pan, saveToServer]
   );
 
   const handleGenerateImage = useCallback(() => {
@@ -90,16 +113,29 @@ function Canvas() {
       multiplier: 2,
     });
 
-    // Add the image to the chat form
     chatFormRef.current.addImage(dataURL);
 
-    // Focus the input field
     chatFormRef.current.focusInput();
   }, []);
 
   useEffect(() => {
-    loadFromStorage();
-  }, [loadFromStorage]);
+    if (projectId) {
+      setProjectId(projectId);
+    }
+  }, [projectId, setProjectId]);
+
+  useEffect(() => {
+    if (!projectId || isInitialized) return;
+
+    if (canvasData) {
+      const canvasJSON = JSON.stringify(canvasData.elements);
+      loadFromServer({ canvasJSON });
+      setIsInitialized(true);
+    } else {
+      loadFromStorage(projectId);
+      setIsInitialized(true);
+    }
+  }, [canvasData, projectId, isInitialized, loadFromServer, loadFromStorage]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -784,6 +820,9 @@ function Canvas() {
         <Download className='w-4 h-4' />
         Generate
       </Button>
+      <div className='absolute top-4 right-4 z-50'>
+        <SaveIndicator isSaving={isSaving} />
+      </div>
       <canvas ref={canvasRef} />
       <ChatForm ref={chatFormRef} />
       <CanvasToolbar />

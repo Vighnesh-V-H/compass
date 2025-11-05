@@ -100,10 +100,28 @@ export const moodboard = pgTable("moodboard", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
+export const canvas = pgTable("canvas", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => nanoid()),
+  projectId: text("project_id")
+    .notNull()
+    .unique()
+    .references(() => project.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  canvasState: text("canvas_state").notNull(), // JSON string
+  version: serial("version").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const schema = {
   user,
   session,
   account,
   verification,
   project,
+  canvas,
 };

@@ -16,10 +16,12 @@ import {
   useImperativeHandle,
 } from "react";
 import { FileUIPart, TextStreamChatTransport } from "ai";
+import { useCanvasStore } from "@/store/canvas-store";
 
 export interface ChatFormRef {
   addImage: (imageDataUrl: string) => void;
   focusInput: () => void;
+  generateDesign: (canvasImage: string) => void;
 }
 
 export const ChatForm = forwardRef<ChatFormRef>((props, ref) => {
@@ -29,6 +31,8 @@ export const ChatForm = forwardRef<ChatFormRef>((props, ref) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const { setGeneratedHtml, setIsGeneratingDesign } = useCanvasStore();
+
   useImperativeHandle(ref, () => ({
     addImage: (imageDataUrl: string) => {
       setSelectedImages((prev) => [...prev, imageDataUrl]);
@@ -36,12 +40,27 @@ export const ChatForm = forwardRef<ChatFormRef>((props, ref) => {
     focusInput: () => {
       inputRef.current?.focus();
     },
+    generateDesign: async (canvasImage: string) => {
+      await handleGenerateDesign(canvasImage);
+    },
   }));
 
   const { messages, status, sendMessage, setMessages } = useChat({
     transport: new TextStreamChatTransport({
-      api: `${process.env.NEXT_PUBLIC_SERVER_URL}/api/ai/chat`,
+      api: `${process.env.NEXT_PUBLIC_SERVER_URL}/api/ai`,
+      credentials: "include",
     }),
+    onFinish: ({ message }) => {
+      // When AI responds with HTML, update the canvas store
+      const textContent = message.parts
+        .filter((part) => part.type === "text")
+        .map((part) => ("text" in part ? part.text : ""))
+        .join("");
+
+      if (textContent) {
+        setGeneratedHtml(textContent);
+      }
+    },
   });
 
   const isLoading = status === "submitted" || status === "streaming";
@@ -100,10 +119,20 @@ export const ChatForm = forwardRef<ChatFormRef>((props, ref) => {
     setMessages([]);
     setInput("");
     setSelectedImages([]);
+    setGeneratedHtml("");
+    setIsGeneratingDesign(false);
+  };
+
+  const handleGenerateDesign = async (canvasImage: string) => {
+    if (!canvasImage) return;
+
+    setSelectedImages((prev) => [...prev, canvasImage]);
+
+    inputRef.current?.focus();
   };
 
   return (
-    <div className='w-60  bg-card border-r border-border flex flex-col fixed left-0 top-30'>
+    <div className='w-60 bg-card border-r border-border flex flex-col fixed left-0 top-30'>
       <div className='p-4 border-b border-border'>
         <Button
           onClick={startNewChat}

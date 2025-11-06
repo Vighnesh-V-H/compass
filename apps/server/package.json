@@ -4,7 +4,9 @@
     "@types/bun": "latest"
   },
   "scripts": {
-    "dev": "bun --watch src/main.ts"
+    "dev": "bun --watch src/main.ts",
+    "worker": "bun --watch src/worker.ts",
+    "worker:prod": "bun src/worker.ts"
   },
   "exports": {
     "./auth": "./src/lib/auth.ts",
@@ -15,6 +17,7 @@
   },
   "private": true,
   "dependencies": {
+    "@ai-sdk/google": "^2.0.28",
     "@compass/schemas": "workspace:*",
     "@hono/node-server": "^1.19.1",
     "bullmq": "^5.63.0",

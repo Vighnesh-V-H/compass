@@ -19,7 +19,8 @@ import CanvasToolbar from "./tools";
 import { useCanvasStore } from "@/store/canvas-store";
 import { ChatForm, ChatFormRef } from "./chat";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, X } from "lucide-react";
+import DOMPurify from "dompurify";
 
 function isNested(inner: FabricObject, outer: FabricObject): boolean {
   const innerRect = inner.getBoundingRect();
@@ -74,6 +75,9 @@ function Canvas({ projectId }: CanvasProps) {
     redo,
     loadFromStorage,
     setProjectId,
+    generatedHtml,
+    isGeneratingDesign,
+    setGeneratedHtml,
   } = useCanvasStore();
 
   const saveCanvasState = useCallback(
@@ -795,6 +799,37 @@ function Canvas({ projectId }: CanvasProps) {
       <canvas ref={canvasRef} />
       <ChatForm ref={chatFormRef} />
       <CanvasToolbar />
+
+      {generatedHtml && (
+        <div className='absolute bg-black right-4 top-20 w-[400px] max-h-[calc(100vh-120px)] bg-white border border-gray-300 rounded-lg shadow-2xl overflow-hidden z-40'>
+          <div className='sticky top-0 bg-black border-b p-3 flex items-center justify-between'>
+            <div className='flex items-center gap-2'>
+              <h3 className='font-semibold text-sm'>Generated Design</h3>
+              {isGeneratingDesign && (
+                <span className='text-xs text-blue-600 flex items-center gap-1'>
+                  <span className='w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse' />
+                  Streaming...
+                </span>
+              )}
+            </div>
+            <Button
+              variant='ghost'
+              size='icon'
+              onClick={() => setGeneratedHtml("")}
+              className='hover:bg-gray-100 h-7 w-7'>
+              <X className='w-3.5 h-3.5' />
+            </Button>
+          </div>
+          <div className='overflow-auto max-h-[calc(100vh-180px)] p-4'>
+            <div
+              className='bg-black generated-design text-sm'
+              dangerouslySetInnerHTML={{
+                __html: DOMPurify.sanitize(generatedHtml),
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

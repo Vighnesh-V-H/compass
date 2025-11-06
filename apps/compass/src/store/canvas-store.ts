@@ -29,6 +29,8 @@ interface CanvasStore {
   historyIndex: number;
   shouldRestore: boolean;
   projectId: string | null;
+  generatedHtml: string;
+  isGeneratingDesign: boolean;
 
   setZoom: (zoom: number) => void;
   zoomIn: () => void;
@@ -54,6 +56,8 @@ interface CanvasStore {
   saveToStorage: () => void;
   loadFromStorage: () => void;
   setProjectId: (projectId: string) => void;
+  setGeneratedHtml: (html: string) => void;
+  setIsGeneratingDesign: (isGenerating: boolean) => void;
 }
 
 const CANVAS_STORAGE_KEY = "canvas-state";
@@ -116,6 +120,8 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   historyIndex: -1,
   shouldRestore: false,
   projectId: null,
+  generatedHtml: "",
+  isGeneratingDesign: false,
 
   setZoom: (zoom: number) => {
     set({ zoom });
@@ -251,4 +257,9 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   },
 
   setProjectId: (projectId: string) => set({ projectId }),
+
+  setGeneratedHtml: (html: string) => set({ generatedHtml: html }),
+
+  setIsGeneratingDesign: (isGenerating: boolean) =>
+    set({ isGeneratingDesign: isGenerating }),
 }));

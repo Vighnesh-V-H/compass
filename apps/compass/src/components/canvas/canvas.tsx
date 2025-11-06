@@ -45,7 +45,11 @@ function isIntersecting(a: FabricObject, b: FabricObject): boolean {
   );
 }
 
-function Canvas() {
+interface CanvasProps {
+  projectId: string;
+}
+
+function Canvas({ projectId }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const textboxRef = useRef<Textbox | null>(null);
@@ -69,6 +73,7 @@ function Canvas() {
     undo,
     redo,
     loadFromStorage,
+    setProjectId,
   } = useCanvasStore();
 
   const saveCanvasState = useCallback(
@@ -90,16 +95,17 @@ function Canvas() {
       multiplier: 2,
     });
 
-    // Add the image to the chat form
     chatFormRef.current.addImage(dataURL);
 
-    // Focus the input field
     chatFormRef.current.focusInput();
   }, []);
 
   useEffect(() => {
     loadFromStorage();
-  }, [loadFromStorage]);
+    if (projectId) {
+      setProjectId(projectId);
+    }
+  }, [loadFromStorage, projectId, setProjectId]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -461,6 +467,8 @@ function Canvas() {
               evented: false,
               lockMovementX: true,
               lockMovementY: true,
+              lockSkewingX: true,
+
               lockRotation: true,
             });
           } else if (selectedTool === "circle") {

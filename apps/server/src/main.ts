@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import authRouter from "@/routes/auth";
 import projectRouter from "@/routes/projects";
+import canvasRouter from "@/routes/canvas";
 import uploadRouter from "@/routes/upload";
 import moodboardRouter from "@/routes/moodboard";
 import { cors } from "hono/cors";
@@ -31,6 +32,7 @@ app.basePath("/api").route("/", authRouter);
 app.basePath("/api").route("/", projectRouter);
 app.basePath("/api").route("/", uploadRouter);
 app.basePath("/api").route("/", moodboardRouter);
+app.basePath("/api").route("/", canvasRouter);
 
 Bun.serve({
   fetch: app.fetch,

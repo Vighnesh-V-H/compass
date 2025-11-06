@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import { debounce } from "lodash";
 import { setToLocalStorage, getFromLocalStorage } from "@/lib/localstorage";
+import axios from "axios";
 
 interface CanvasState {
-  canvasJSON: string; // Serialized canvas state from Fabric's toJSON()
+  canvasJSON: string;
 }
 
 export type ToolType =
@@ -27,6 +28,7 @@ interface CanvasStore {
   canvasHistory: CanvasState[];
   historyIndex: number;
   shouldRestore: boolean;
+  projectId: string | null;
 
   setZoom: (zoom: number) => void;
   zoomIn: () => void;
@@ -51,10 +53,36 @@ interface CanvasStore {
   resetCanvas: () => void;
   saveToStorage: () => void;
   loadFromStorage: () => void;
+  setProjectId: (projectId: string) => void;
 }
 
 const CANVAS_STORAGE_KEY = "canvas-state";
 const DEBOUNCE_DELAY = 500;
+
+const saveToServer = async (projectId: string, canvasState: string) => {
+  try {
+    console.log(projectId);
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_SERVER_URL}/api/canvas/${projectId}`,
+      { canvasState },
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+  } catch (error) {
+    console.error("Failed to save canvas to server:", error);
+  }
+};
+
+const debouncedServerSave = debounce(
+  (projectId: string, canvasState: string) => {
+    saveToServer(projectId, canvasState);
+  },
+  DEBOUNCE_DELAY
+);
 
 const debouncedSave = debounce((state: Partial<CanvasStore>) => {
   const dataToSave = {
@@ -65,6 +93,18 @@ const debouncedSave = debounce((state: Partial<CanvasStore>) => {
   };
   setToLocalStorage(CANVAS_STORAGE_KEY, dataToSave);
   console.log("Canvas state saved to localStorage");
+
+  if (
+    state.projectId &&
+    state.canvasHistory &&
+    state.historyIndex !== undefined &&
+    state.historyIndex >= 0
+  ) {
+    const currentState = state.canvasHistory[state.historyIndex];
+    if (currentState) {
+      debouncedServerSave(state.projectId, currentState.canvasJSON);
+    }
+  }
 }, DEBOUNCE_DELAY);
 
 export const useCanvasStore = create<CanvasStore>((set, get) => ({
@@ -75,6 +115,7 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
   canvasHistory: [],
   historyIndex: -1,
   shouldRestore: false,
+  projectId: null,
 
   setZoom: (zoom: number) => {
     set({ zoom });
@@ -208,4 +249,6 @@ export const useCanvasStore = create<CanvasStore>((set, get) => ({
       console.log("Canvas state loaded from localStorage");
     }
   },
+
+  setProjectId: (projectId: string) => set({ projectId }),
 }));
